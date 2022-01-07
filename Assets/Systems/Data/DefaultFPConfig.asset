@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c16ac4e37ab09a2409b642fda03dc2cc, type: 3}
+  m_Name: DefaultFPConfig
+  m_EditorClassIdentifier: 
+  Height: 1.8
+  Radius: 0.3
+  GroundedLayerMask:
+    serializedVersion: 2
+    m_Bits: 17
+  GroundedCheckBuffer: 0.1
+  GroundedCheckRadiusBuffer: 0.05
+  Camera_InvertY: 0
+  Camera_HorizontalSensitivity: 10
+  Camera_VerticalSensitivity: 10
+  Camera_MinPitch: -75
+  Camera_MaxPitch: 75
+  WalkSpeed: 10
+  RunSpeed: 15
+  CanRun: 1
+  IsRunToggle: 1
+  SlopeLimit: 60
