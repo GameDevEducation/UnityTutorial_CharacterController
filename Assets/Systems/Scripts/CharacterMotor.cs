@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(Rigidbody))]
 public class CharacterMotor : MonoBehaviour
@@ -9,12 +11,29 @@ public class CharacterMotor : MonoBehaviour
     [SerializeField] protected CharacterMotorConfig Config;
     [SerializeField] Transform LinkedCamera;
 
+    public UnityEvent<bool> OnRunChanged = new UnityEvent<bool> ();
+    public UnityEvent OnHitGround = new UnityEvent();
+
     protected Rigidbody LinkedRB;
     protected float CurrentCameraPitch = 0f;
 
+    protected float JumpTimeRemaining = 0f;
+
+    public bool IsJumping { get; private set; } = false;
+    public int JumpCount { get; private set; } = 0;
     public bool IsRunning { get; protected set; } = false;
     public bool IsGrounded { get; protected set; } = true;
-    public float CurrentMaxSpeed => IsRunning ? Config.RunSpeed : Config.WalkSpeed;
+    public bool SendUIInteractions { get; set; } = true;
+    public float CurrentMaxSpeed
+    {
+        get
+        {
+            if (IsGrounded)
+                return IsRunning ? Config.RunSpeed : Config.WalkSpeed;
+            return Config.CanAirControl ? Config.AirControlMaxSpeed : 0f;
+        }
+    }
+
 
     #region Input System Handling
     protected Vector2 _Input_Move;
@@ -45,6 +64,23 @@ public class CharacterMotor : MonoBehaviour
     protected void OnPrimaryAction(InputValue value)
     {
         _Input_PrimaryAction = value.isPressed;
+
+        // need to inject pointer event
+        if (_Input_PrimaryAction && SendUIInteractions)
+        {
+            PointerEventData pointerData = new PointerEventData(EventSystem.current);
+            pointerData.position = Mouse.current.position.ReadValue();
+
+            // raycast against the UI
+            List<RaycastResult> results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerData, results);
+
+            foreach(RaycastResult result in results)
+            {
+                if (result.distance < Config.MaxInteractionDistance)
+                    ExecuteEvents.Execute(result.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
+            }
+        }
     }
 
     protected bool _Input_SecondaryAction;
@@ -58,6 +94,7 @@ public class CharacterMotor : MonoBehaviour
     private void Awake()
     {
         LinkedRB = GetComponent<Rigidbody>();
+        SendUIInteractions = Config.SendUIInteractions;
     }
 
     // Start is called before the first frame update
@@ -76,8 +113,11 @@ public class CharacterMotor : MonoBehaviour
     {
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
+        bool wasRunning = IsRunning;
         UpdateRunning(groundCheckResult);
-        Debug.Log(IsRunning);
+
+        if (wasRunning != IsRunning)
+            OnRunChanged.Invoke(IsRunning);
 
         UpdateMovement(groundCheckResult);
     }
@@ -89,15 +129,29 @@ public class CharacterMotor : MonoBehaviour
 
     protected RaycastHit UpdateIsGrounded()
     {
+        RaycastHit hitResult;
+
+        // currently performing a jump
+        if (JumpTimeRemaining > 0)
+        {
+            IsGrounded = false;
+            return new RaycastHit();
+        }
+
         Vector3 startPos = LinkedRB.position + Vector3.up * Config.Height * 0.5f;
-        float groundCheckDistance = (Config.Height * 0.5f) + Config.GroundedCheckBuffer;
+        float groundCheckRadius = Config.Radius + Config.GroundedCheckRadiusBuffer;
+        float groundCheckDistance = (Config.Height * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
 
         // perform our spherecast
-        RaycastHit hitResult;
-        if (Physics.SphereCast(startPos, Config.Radius + Config.GroundedCheckRadiusBuffer, Vector3.down, out hitResult,
+        if (Physics.SphereCast(startPos, groundCheckRadius, Vector3.down, out hitResult,
                                groundCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
+            if (!IsGrounded)
+                OnHitGround.Invoke();
+
             IsGrounded = true;
+            JumpCount = 0;
+            JumpTimeRemaining = 0f;
 
             // add auto parenting here
         }
@@ -117,6 +171,7 @@ public class CharacterMotor : MonoBehaviour
         Vector3 movementVector = transform.forward * _Input_Move.y + transform.right * _Input_Move.x;
         movementVector *= CurrentMaxSpeed;
 
+        // are we on the ground?
         if (IsGrounded)
         {
             // project onto the current surface
@@ -125,10 +180,60 @@ public class CharacterMotor : MonoBehaviour
             // trying to move up too steep a slope
             if (movementVector.y > 0 && Vector3.Angle(Vector3.up, groundCheckResult.normal) > Config.SlopeLimit)
                 movementVector = Vector3.zero;
+        } // in the air
+        else
+        {
+            movementVector += Vector3.down * Config.FallVelocity;
         }
 
+        UpdateJumping(ref movementVector);
+
         // update the velocity
-        LinkedRB.velocity = movementVector;
+        LinkedRB.velocity = Vector3.MoveTowards(LinkedRB.velocity, movementVector, Config.Acceleration);
+    }
+
+    protected void UpdateJumping(ref Vector3 movementVector)
+    {
+        // jump requested?
+        bool triggeredJumpThisFrame = false;
+        if (_Input_Jump)
+        {
+            _Input_Jump = false;
+
+            // check if we can jump
+            bool triggerJump = true;
+            int numJumpsPermitted = Config.CanDoubleJump ? 2 : 1;
+            if (JumpCount >= numJumpsPermitted)
+                triggerJump = false;
+            if (!IsGrounded && !IsJumping)
+                triggerJump = false;
+
+            // jump is permitted?
+            if (triggerJump)
+            {
+                if (JumpCount == 0)
+                    triggeredJumpThisFrame = true;
+
+                JumpTimeRemaining += Config.JumpTime;
+                IsJumping = true;
+                ++JumpCount;
+            }
+        }
+
+        if (IsJumping)
+        {
+            // update remaining jump time if not jumping this frame
+            if (!triggeredJumpThisFrame)
+                JumpTimeRemaining -= Time.deltaTime;
+
+            // jumping finished
+            if (JumpTimeRemaining <= 0)
+                IsJumping = false;
+            else
+            {
+                movementVector.y = Config.JumpVelocity;
+            }
+        }
     }
 
     protected void UpdateRunning(RaycastHit groundCheckResult)

@@ -27,4 +27,22 @@ public class CharacterMotorConfig : ScriptableObject
     public bool CanRun = true;
     public bool IsRunToggle = true;
     public float SlopeLimit = 60f;
+    public float Acceleration = 1f;
+
+    [Header("Falling")]
+    public float FallVelocity = 1f;
+
+    [Header("Air Control")]
+    public bool CanAirControl = true;
+    public float AirControlMaxSpeed = 2.5f;
+
+    [Header("Jumping")]
+    public bool CanJump = true;
+    public bool CanDoubleJump = true;
+    public float JumpVelocity = 15f;
+    public float JumpTime = 0.1f;
+
+    [Header("User Interface")]
+    public bool SendUIInteractions = true;
+    public float MaxInteractionDistance = 2f;
 }

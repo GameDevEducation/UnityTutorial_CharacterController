@@ -17,7 +17,7 @@ MonoBehaviour:
   GroundedLayerMask:
     serializedVersion: 2
     m_Bits: 17
-  GroundedCheckBuffer: 0.1
+  GroundedCheckBuffer: 0.05
   GroundedCheckRadiusBuffer: 0.05
   Camera_InvertY: 0
   Camera_HorizontalSensitivity: 10
@@ -29,3 +29,11 @@ MonoBehaviour:
   CanRun: 1
   IsRunToggle: 1
   SlopeLimit: 60
+  Acceleration: 1
+  FallVelocity: 12.5
+  CanAirControl: 1
+  AirControlMaxSpeed: 10
+  CanJump: 1
+  CanDoubleJump: 1
+  JumpVelocity: 5
+  JumpTime: 0.25
