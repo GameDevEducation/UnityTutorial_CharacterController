@@ -14,7 +14,12 @@ public class CharacterMotor : MonoBehaviour
     public UnityEvent<bool> OnRunChanged = new UnityEvent<bool> ();
     public UnityEvent OnHitGround = new UnityEvent();
 
+    [Header("Debug Controls")]
+    [SerializeField] protected bool DEBUG_OverrideMovement = false;
+    [SerializeField] protected Vector2 DEBUG_MovementInput;
+
     protected Rigidbody LinkedRB;
+    protected Collider LinkedCollider;
     protected float CurrentCameraPitch = 0f;
 
     protected float JumpTimeRemaining = 0f;
@@ -94,6 +99,7 @@ public class CharacterMotor : MonoBehaviour
     private void Awake()
     {
         LinkedRB = GetComponent<Rigidbody>();
+        LinkedCollider = GetComponent<Collider>();
         SendUIInteractions = Config.SendUIInteractions;
     }
 
@@ -101,6 +107,8 @@ public class CharacterMotor : MonoBehaviour
     void Start()
     {
         SetCursorLock(true);
+
+        LinkedCollider.material = Config.Material_Default;
     }
 
     // Update is called once per frame
@@ -114,10 +122,15 @@ public class CharacterMotor : MonoBehaviour
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
         bool wasRunning = IsRunning;
+        bool wasGrounded = IsGrounded;
         UpdateRunning(groundCheckResult);
 
         if (wasRunning != IsRunning)
             OnRunChanged.Invoke(IsRunning);
+
+        // switch back to grounded material
+        if (wasGrounded != IsGrounded && IsGrounded)
+            LinkedCollider.material = Config.Material_Default;
 
         UpdateMovement(groundCheckResult);
     }
@@ -163,6 +176,9 @@ public class CharacterMotor : MonoBehaviour
 
     protected void UpdateMovement(RaycastHit groundCheckResult)
     {
+        if (DEBUG_OverrideMovement)
+            _Input_Move = DEBUG_MovementInput;
+
         // stop running if no input
         if (_Input_Move.magnitude < float.Epsilon)
             IsRunning = false;
@@ -188,8 +204,44 @@ public class CharacterMotor : MonoBehaviour
 
         UpdateJumping(ref movementVector);
 
+        if (IsGrounded && !IsJumping)
+            CheckForStepUp(ref movementVector);
+
         // update the velocity
         LinkedRB.velocity = Vector3.MoveTowards(LinkedRB.velocity, movementVector, Config.Acceleration);
+    }
+
+    protected void CheckForStepUp(ref Vector3 movementVector)
+    {
+        Vector3 lookAheadStartPoint = LinkedRB.position + Vector3.up * (Config.StepCheck_MaxStepHeight * 0.5f);
+        Vector3 lookAheadDirection = movementVector.normalized;
+        float lookAheadDistance = Config.Radius + Config.StepCheck_LookAheadRange;
+
+        // check if there is a potential step ahead
+        if (Physics.Raycast(lookAheadStartPoint, lookAheadDirection, lookAheadDistance, 
+                            Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            lookAheadStartPoint = LinkedRB.position + Vector3.up * Config.StepCheck_MaxStepHeight;
+
+            // check if there is clear space above the step
+            if (!Physics.Raycast(lookAheadStartPoint, lookAheadDirection, lookAheadDistance,
+                                Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                Vector3 candidatePoint = lookAheadStartPoint + lookAheadDirection * lookAheadDistance;
+
+                // check the surface of the step
+                RaycastHit hitResult;
+                if (Physics.Raycast(candidatePoint, Vector3.down, out hitResult, Config.StepCheck_MaxStepHeight * 2f,
+                                    Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
+                {
+                    // is the step shallow enough in slope
+                    if (Vector3.Angle(Vector3.up, hitResult.normal) <= Config.SlopeLimit)
+                    {
+                        LinkedRB.position = hitResult.point;
+                    }
+                }
+            }
+        }
     }
 
     protected void UpdateJumping(ref Vector3 movementVector)
@@ -214,6 +266,7 @@ public class CharacterMotor : MonoBehaviour
                 if (JumpCount == 0)
                     triggeredJumpThisFrame = true;
 
+                LinkedCollider.material = Config.Material_Jumping;
                 JumpTimeRemaining += Config.JumpTime;
                 IsJumping = true;
                 ++JumpCount;
@@ -231,7 +284,23 @@ public class CharacterMotor : MonoBehaviour
                 IsJumping = false;
             else
             {
-                movementVector.y = Config.JumpVelocity;
+                Vector3 startPos = LinkedRB.position + Vector3.up * Config.Height * 0.5f;
+                float ceilingCheckRadius = Config.Radius + Config.CeilingCheckRadiusBuffer;
+                float ceilingCheckDistance = (Config.Height * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
+
+                // perform our spherecast
+                RaycastHit ceilingHitResult;
+                if (Physics.SphereCast(startPos, ceilingCheckRadius, Vector3.up, out ceilingHitResult,
+                                       ceilingCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
+                {
+                    IsJumping = false;
+                    JumpTimeRemaining = 0f;
+                    movementVector.y = 0f;
+                }
+                else
+                {
+                    movementVector.y = Config.JumpVelocity;
+                }
             }
         }
     }

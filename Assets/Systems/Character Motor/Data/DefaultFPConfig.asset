@@ -13,12 +13,21 @@ MonoBehaviour:
   m_Name: DefaultFPConfig
   m_EditorClassIdentifier: 
   Height: 1.8
-  Radius: 0.3
+  Radius: 0.35
   GroundedLayerMask:
     serializedVersion: 2
     m_Bits: 17
   GroundedCheckBuffer: 0.05
   GroundedCheckRadiusBuffer: 0.05
+  CeilingCheckLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  CeilingCheckRangeBuffer: 0.05
+  CeilingCheckRadiusBuffer: 0.05
+  StepCheck_LookAheadRange: 0.1
+  StepCheck_MaxStepHeight: 0.3
+  Material_Default: {fileID: 13400000, guid: f3a406fa5f713fa409d024f9a8a59457, type: 2}
+  Material_Jumping: {fileID: 13400000, guid: 01cd7d9d003e8f143a1f5280e8e09f5c, type: 2}
   Camera_InvertY: 0
   Camera_HorizontalSensitivity: 10
   Camera_VerticalSensitivity: 10
@@ -37,3 +46,5 @@ MonoBehaviour:
   CanDoubleJump: 1
   JumpVelocity: 5
   JumpTime: 0.25
+  SendUIInteractions: 1
+  MaxInteractionDistance: 2
