@@ -58,4 +58,9 @@ public class CharacterMotorConfig : ScriptableObject
     [Header("User Interface")]
     public bool SendUIInteractions = true;
     public float MaxInteractionDistance = 2f;
+
+    [Header("Audio")]
+    public float FootstepInterval_Walking = 0.4f;
+    public float FootstepInterval_Running = 0.2f;
+    public float MinAirTimeForLandedSound = 0.2f;
 }

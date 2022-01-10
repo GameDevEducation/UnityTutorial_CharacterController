@@ -9,21 +9,29 @@ using UnityEngine.EventSystems;
 public class CharacterMotor : MonoBehaviour
 {
     [SerializeField] protected CharacterMotorConfig Config;
-    [SerializeField] Transform LinkedCamera;
+    [SerializeField] protected Transform LinkedCamera;
 
     public UnityEvent<bool> OnRunChanged = new UnityEvent<bool> ();
-    public UnityEvent OnHitGround = new UnityEvent();
+    public UnityEvent<Vector3> OnHitGround = new UnityEvent<Vector3>();
+    public UnityEvent<Vector3> OnBeginJump = new UnityEvent<Vector3>();
+    public UnityEvent<Vector3, float> OnFootstep = new UnityEvent<Vector3, float>();
 
     [Header("Debug Controls")]
     [SerializeField] protected bool DEBUG_OverrideMovement = false;
     [SerializeField] protected Vector2 DEBUG_MovementInput;
+    [SerializeField] protected bool DEBUG_ToggleLookLock = false;
+    [SerializeField] protected bool DEBUG_ToggleMovementLock = false;
 
     protected Rigidbody LinkedRB;
     protected Collider LinkedCollider;
     protected float CurrentCameraPitch = 0f;
 
     protected float JumpTimeRemaining = 0f;
+    protected float TimeSinceLastFootstepAudio = 0f;
+    protected float TimeInAir = 0f;
 
+    public bool IsMovementLocked { get; private set; } = false;
+    public bool IsLookingLocked { get; private set; } = false;
     public bool IsJumping { get; private set; } = false;
     public int JumpCount { get; private set; } = 0;
     public bool IsRunning { get; protected set; } = false;
@@ -114,15 +122,25 @@ public class CharacterMotor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (DEBUG_ToggleLookLock)
+        {
+            DEBUG_ToggleLookLock = false;
+            IsLookingLocked = !IsLookingLocked;
+        }
+        if (DEBUG_ToggleMovementLock)
+        {
+            DEBUG_ToggleMovementLock = false;
+            IsMovementLocked = !IsMovementLocked;
+        }
     }
 
     protected void FixedUpdate()
     {
+        bool wasGrounded = IsGrounded;
+        bool wasRunning = IsRunning;
+
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
-        bool wasRunning = IsRunning;
-        bool wasGrounded = IsGrounded;
         UpdateRunning(groundCheckResult);
 
         if (wasRunning != IsRunning)
@@ -130,7 +148,16 @@ public class CharacterMotor : MonoBehaviour
 
         // switch back to grounded material
         if (wasGrounded != IsGrounded && IsGrounded)
+        {
             LinkedCollider.material = Config.Material_Default;
+            TimeSinceLastFootstepAudio = 0f;
+
+            if (TimeInAir >= Config.MinAirTimeForLandedSound)
+                OnHitGround.Invoke(LinkedRB.position);
+        }
+
+        // track how long we have been in the air
+        TimeInAir = IsGrounded ? 0f : (TimeInAir + Time.deltaTime);
 
         UpdateMovement(groundCheckResult);
     }
@@ -159,9 +186,6 @@ public class CharacterMotor : MonoBehaviour
         if (Physics.SphereCast(startPos, groundCheckRadius, Vector3.down, out hitResult,
                                groundCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
-            if (!IsGrounded)
-                OnHitGround.Invoke();
-
             IsGrounded = true;
             JumpCount = 0;
             JumpTimeRemaining = 0f;
@@ -179,9 +203,9 @@ public class CharacterMotor : MonoBehaviour
         if (DEBUG_OverrideMovement)
             _Input_Move = DEBUG_MovementInput;
 
-        // stop running if no input
-        if (_Input_Move.magnitude < float.Epsilon)
-            IsRunning = false;
+        // movement locked?
+        if (IsMovementLocked)
+            _Input_Move = Vector2.zero;
 
         // calculate our movement input
         Vector3 movementVector = transform.forward * _Input_Move.y + transform.right * _Input_Move.x;
@@ -205,10 +229,33 @@ public class CharacterMotor : MonoBehaviour
         UpdateJumping(ref movementVector);
 
         if (IsGrounded && !IsJumping)
+        {
             CheckForStepUp(ref movementVector);
+
+            UpdateFootstepAudio();
+        }
 
         // update the velocity
         LinkedRB.velocity = Vector3.MoveTowards(LinkedRB.velocity, movementVector, Config.Acceleration);
+    }
+
+    protected void UpdateFootstepAudio()
+    {
+        // is the player attempting to move?
+        if (_Input_Move.magnitude > float.Epsilon)
+        {
+            // update time since last audio
+            TimeSinceLastFootstepAudio += Time.deltaTime;
+
+            // time for footstep audio?
+            float footstepInterval = IsRunning ? Config.FootstepInterval_Running : Config.FootstepInterval_Walking;
+            if (TimeSinceLastFootstepAudio >= footstepInterval)
+            {
+                OnFootstep.Invoke(LinkedRB.position, LinkedRB.velocity.magnitude);
+
+                TimeSinceLastFootstepAudio -= footstepInterval;
+            }
+        }
     }
 
     protected void CheckForStepUp(ref Vector3 movementVector)
@@ -270,6 +317,8 @@ public class CharacterMotor : MonoBehaviour
                 JumpTimeRemaining += Config.JumpTime;
                 IsJumping = true;
                 ++JumpCount;
+
+                OnBeginJump.Invoke(LinkedRB.position);
             }
         }
 
@@ -307,6 +356,10 @@ public class CharacterMotor : MonoBehaviour
 
     protected void UpdateRunning(RaycastHit groundCheckResult)
     {
+        // stop running if no input
+        if (_Input_Move.magnitude < float.Epsilon)
+            IsRunning = false;
+
         // not grounded
         if (!IsGrounded)
         {
@@ -333,6 +386,10 @@ public class CharacterMotor : MonoBehaviour
 
     protected void UpdateCamera()
     {
+        // not allowed to look around?
+        if (IsLookingLocked)
+            return;
+
         // calculate our camera inputs
         float cameraYawDelta = _Input_Look.x * Config.Camera_HorizontalSensitivity * Time.deltaTime;
         float cameraPitchDelta = _Input_Look.y * Config.Camera_VerticalSensitivity * Time.deltaTime *
@@ -352,5 +409,15 @@ public class CharacterMotor : MonoBehaviour
     {
         Cursor.visible = !locked;
         Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+    }
+
+    public void SetMovementLock(bool locked)
+    {
+        IsMovementLocked = locked;
+    }
+
+    public void SetLookLock(bool locked)
+    {
+        IsLookingLocked = locked;
     }
 }

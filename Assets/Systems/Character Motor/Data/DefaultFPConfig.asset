@@ -48,3 +48,5 @@ MonoBehaviour:
   JumpTime: 0.25
   SendUIInteractions: 1
   MaxInteractionDistance: 2
+  FootstepInterval_Walking: 0.4
+  FootstepInterval_Running: 0.2
