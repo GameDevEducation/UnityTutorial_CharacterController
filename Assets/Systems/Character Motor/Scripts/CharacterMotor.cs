@@ -29,6 +29,7 @@ public class CharacterMotor : MonoBehaviour
     protected float JumpTimeRemaining = 0f;
     protected float TimeSinceLastFootstepAudio = 0f;
     protected float TimeInAir = 0f;
+    protected float OriginalDrag;
 
     public bool IsMovementLocked { get; private set; } = false;
     public bool IsLookingLocked { get; private set; } = false;
@@ -117,6 +118,7 @@ public class CharacterMotor : MonoBehaviour
         SetCursorLock(true);
 
         LinkedCollider.material = Config.Material_Default;
+        OriginalDrag = LinkedRB.drag;
     }
 
     // Update is called once per frame
@@ -150,6 +152,7 @@ public class CharacterMotor : MonoBehaviour
         if (wasGrounded != IsGrounded && IsGrounded)
         {
             LinkedCollider.material = Config.Material_Default;
+            LinkedRB.drag = OriginalDrag;
             TimeSinceLastFootstepAudio = 0f;
 
             if (TimeInAir >= Config.MinAirTimeForLandedSound)
@@ -179,12 +182,11 @@ public class CharacterMotor : MonoBehaviour
         }
 
         Vector3 startPos = LinkedRB.position + Vector3.up * Config.Height * 0.5f;
-        float groundCheckRadius = Config.Radius + Config.GroundedCheckRadiusBuffer;
-        float groundCheckDistance = (Config.Height * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
+        float groundCheckDistance = (Config.Height * 0.5f) + Config.GroundedCheckBuffer;
 
         // perform our spherecast
-        if (Physics.SphereCast(startPos, groundCheckRadius, Vector3.down, out hitResult,
-                               groundCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
+        if (Physics.Raycast(startPos, Vector3.down, out hitResult, groundCheckDistance,
+                            Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
             JumpCount = 0;
@@ -314,6 +316,7 @@ public class CharacterMotor : MonoBehaviour
                     triggeredJumpThisFrame = true;
 
                 LinkedCollider.material = Config.Material_Jumping;
+                LinkedRB.drag = 0;
                 JumpTimeRemaining += Config.JumpTime;
                 IsJumping = true;
                 ++JumpCount;

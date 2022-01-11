@@ -7,16 +7,15 @@ public class CharacterMotorConfig : ScriptableObject
 {
     [Header("Character")]
     public float Height = 1.8f;
-    public float Radius = 0.3f;
+    public float Radius = 0.35f;
 
     [Header("Grounded Check")]
     public LayerMask GroundedLayerMask = ~0;
-    public float GroundedCheckBuffer = 0.1f;
-    public float GroundedCheckRadiusBuffer = 0.05f;
+    public float GroundedCheckBuffer = 0.2f;
 
     [Header("Ceiling Check")]
     public LayerMask CeilingCheckLayerMask = ~0;
-    public float CeilingCheckRangeBuffer = 0.1f;
+    public float CeilingCheckRangeBuffer = 0.05f;
     public float CeilingCheckRadiusBuffer = 0.05f;
 
     [Header("Step Up Check")]
@@ -43,17 +42,17 @@ public class CharacterMotorConfig : ScriptableObject
     public float Acceleration = 1f;
 
     [Header("Falling")]
-    public float FallVelocity = 1f;
+    public float FallVelocity = 12.5f;
 
     [Header("Air Control")]
     public bool CanAirControl = true;
-    public float AirControlMaxSpeed = 2.5f;
+    public float AirControlMaxSpeed = 10f;
 
     [Header("Jumping")]
     public bool CanJump = true;
     public bool CanDoubleJump = true;
-    public float JumpVelocity = 15f;
-    public float JumpTime = 0.1f;
+    public float JumpVelocity = 5f;
+    public float JumpTime = 0.25f;
 
     [Header("User Interface")]
     public bool SendUIInteractions = true;

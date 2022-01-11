@@ -17,8 +17,7 @@ MonoBehaviour:
   GroundedLayerMask:
     serializedVersion: 2
     m_Bits: 17
-  GroundedCheckBuffer: 0.05
-  GroundedCheckRadiusBuffer: 0.05
+  GroundedCheckBuffer: 0.2
   CeilingCheckLayerMask:
     serializedVersion: 2
     m_Bits: 1
@@ -50,3 +49,4 @@ MonoBehaviour:
   MaxInteractionDistance: 2
   FootstepInterval_Walking: 0.4
   FootstepInterval_Running: 0.2
+  MinAirTimeForLandedSound: 0.2
