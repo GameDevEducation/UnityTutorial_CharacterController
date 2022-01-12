@@ -32,6 +32,7 @@ public class CharacterMotorConfig : ScriptableObject
     public float Camera_VerticalSensitivity = 10f;
     public float Camera_MinPitch = -75f;
     public float Camera_MaxPitch = 75f;
+    public float Camera_InitialDiscardTime = 0.1f;
 
     [Header("Movement")]
     public float WalkSpeed = 10f;

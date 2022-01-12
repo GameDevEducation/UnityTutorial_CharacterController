@@ -30,6 +30,7 @@ public class CharacterMotor : MonoBehaviour
     protected float TimeSinceLastFootstepAudio = 0f;
     protected float TimeInAir = 0f;
     protected float OriginalDrag;
+    protected float Camera_CurrentTime = 0f;
 
     public bool IsMovementLocked { get; private set; } = false;
     public bool IsLookingLocked { get; private set; } = false;
@@ -392,6 +393,13 @@ public class CharacterMotor : MonoBehaviour
         // not allowed to look around?
         if (IsLookingLocked)
             return;
+
+        // ignore any camera input for a brief time (mostly helps editor side when hitting play button)
+        if (Camera_CurrentTime < Config.Camera_InitialDiscardTime)
+        {
+            Camera_CurrentTime += Time.deltaTime;
+            return;
+        }
 
         // calculate our camera inputs
         float cameraYawDelta = _Input_Look.x * Config.Camera_HorizontalSensitivity * Time.deltaTime;
