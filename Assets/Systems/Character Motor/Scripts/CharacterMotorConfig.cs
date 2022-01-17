@@ -5,6 +5,12 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Character Motor/Config", fileName = "CharacterMotorConfig")]
 public class CharacterMotorConfig : ScriptableObject
 {
+    public enum EAutoParentMode
+    {
+        Anything,
+        LookForAutoParentTargetComponent
+    }
+
     [Header("Character")]
     public float Height = 1.8f;
     public float Radius = 0.35f;
@@ -33,6 +39,7 @@ public class CharacterMotorConfig : ScriptableObject
     public float Camera_MinPitch = -75f;
     public float Camera_MaxPitch = 75f;
     public float Camera_InitialDiscardTime = 0.1f;
+    public float Camera_VerticalOffset = -0.1f;
 
     [Header("Movement")]
     public float WalkSpeed = 10f;
@@ -41,9 +48,19 @@ public class CharacterMotorConfig : ScriptableObject
     public bool IsRunToggle = true;
     public float SlopeLimit = 60f;
     public float Acceleration = 1f;
+    public bool AutoParent = false;
+    public EAutoParentMode AutoParentMode = EAutoParentMode.Anything;
+
+    [Header("Crouching")]
+    public bool CanCrouch = true;
+    public bool IsCrouchToggle = true;
+    public float CrouchHeight = 0.9f;
+    public float CrouchSpeedMultiplier = 0.5f;
+    public float CrouchTransitionTime = 0.25f;
 
     [Header("Falling")]
     public float FallVelocity = 12.5f;
+    public float CoyoteTime = 0.1f;
 
     [Header("Air Control")]
     public bool CanAirControl = true;

@@ -32,13 +32,23 @@ MonoBehaviour:
   Camera_VerticalSensitivity: 10
   Camera_MinPitch: -75
   Camera_MaxPitch: 75
+  Camera_InitialDiscardTime: 0.1
+  Camera_VerticalOffset: -0.1
   WalkSpeed: 10
   RunSpeed: 15
   CanRun: 1
   IsRunToggle: 1
   SlopeLimit: 60
   Acceleration: 1
+  AutoParent: 0
+  AutoParentMode: 0
+  CanCrouch: 1
+  IsCrouchToggle: 1
+  CrouchHeight: 0.9
+  CrouchSpeedMultiplier: 0.5
+  CrouchTransitionTime: 0.25
   FallVelocity: 12.5
+  CoyoteTime: 0.1
   CanAirControl: 1
   AirControlMaxSpeed: 10
   CanJump: 1

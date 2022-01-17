@@ -11,10 +11,10 @@ public class CharacterMotor : MonoBehaviour
     [SerializeField] protected CharacterMotorConfig Config;
     [SerializeField] protected Transform LinkedCamera;
 
-    public UnityEvent<bool> OnRunChanged = new UnityEvent<bool> ();
-    public UnityEvent<Vector3> OnHitGround = new UnityEvent<Vector3>();
-    public UnityEvent<Vector3> OnBeginJump = new UnityEvent<Vector3>();
-    public UnityEvent<Vector3, float> OnFootstep = new UnityEvent<Vector3, float>();
+    [SerializeField] protected UnityEvent<bool> OnRunChanged = new UnityEvent<bool> ();
+    [SerializeField] protected UnityEvent<Vector3> OnHitGround = new UnityEvent<Vector3>();
+    [SerializeField] protected UnityEvent<Vector3> OnBeginJump = new UnityEvent<Vector3>();
+    [SerializeField] protected UnityEvent<Vector3, float> OnFootstep = new UnityEvent<Vector3, float>();
 
     [Header("Debug Controls")]
     [SerializeField] protected bool DEBUG_OverrideMovement = false;
@@ -23,7 +23,7 @@ public class CharacterMotor : MonoBehaviour
     [SerializeField] protected bool DEBUG_ToggleMovementLock = false;
 
     protected Rigidbody LinkedRB;
-    protected Collider LinkedCollider;
+    protected CapsuleCollider LinkedCollider;
     protected float CurrentCameraPitch = 0f;
 
     protected float JumpTimeRemaining = 0f;
@@ -32,19 +32,39 @@ public class CharacterMotor : MonoBehaviour
     protected float OriginalDrag;
     protected float Camera_CurrentTime = 0f;
 
-    public bool IsMovementLocked { get; private set; } = false;
-    public bool IsLookingLocked { get; private set; } = false;
-    public bool IsJumping { get; private set; } = false;
-    public int JumpCount { get; private set; } = 0;
+    public bool IsMovementLocked { get; protected set; } = false;
+    public bool IsLookingLocked { get; protected set; } = false;
+    public bool IsJumping { get; protected set; } = false;
+    public int JumpCount { get; protected set; } = 0;
     public bool IsRunning { get; protected set; } = false;
     public bool IsGrounded { get; protected set; } = true;
-    public bool SendUIInteractions { get; set; } = true;
+    public bool InCoyoteTime => CoyoteTimeRemaining > 0f;
+    public bool IsGroundedOrInCoyoteTime => IsGrounded || InCoyoteTime;
+    public bool IsCrouched { get; protected set; } = false;
+    public bool SendUIInteractions { get; protected set; } = true;
+    public bool InCrouchTransition { get; protected set; } = false;
+    public bool TargetCrouchState { get; protected set; } = false;
+    public float CrouchTransitionProgress { get; protected set; } = 1f;
+    public float CoyoteTimeRemaining { get; protected set; } = 0f;
+
+    public float CurrentHeight
+    {
+        get
+        {
+            if (InCrouchTransition)
+                return Mathf.Lerp(Config.CrouchHeight, Config.Height, CrouchTransitionProgress);
+
+            return IsCrouched ? Config.CrouchHeight : Config.Height;
+        }
+    }
+
     public float CurrentMaxSpeed
     {
         get
         {
-            if (IsGrounded)
-                return IsRunning ? Config.RunSpeed : Config.WalkSpeed;
+            if (IsGroundedOrInCoyoteTime)
+                return (IsRunning ? Config.RunSpeed : Config.WalkSpeed) * (IsCrouched ? Config.CrouchSpeedMultiplier : 1f);
+
             return Config.CanAirControl ? Config.AirControlMaxSpeed : 0f;
         }
     }
@@ -74,6 +94,12 @@ public class CharacterMotor : MonoBehaviour
     {
         _Input_Run = value.isPressed;
     }
+
+    protected bool _Input_Crouch;
+    protected void OnCrouch(InputValue value)
+    {
+        _Input_Crouch = value.isPressed;
+    }    
 
     protected bool _Input_PrimaryAction;
     protected void OnPrimaryAction(InputValue value)
@@ -109,7 +135,7 @@ public class CharacterMotor : MonoBehaviour
     private void Awake()
     {
         LinkedRB = GetComponent<Rigidbody>();
-        LinkedCollider = GetComponent<Collider>();
+        LinkedCollider = GetComponent<CapsuleCollider>();
         SendUIInteractions = Config.SendUIInteractions;
     }
 
@@ -119,6 +145,12 @@ public class CharacterMotor : MonoBehaviour
         SetCursorLock(true);
 
         LinkedCollider.material = Config.Material_Default;
+        LinkedCollider.radius = Config.Radius;
+        LinkedCollider.height = CurrentHeight;
+        LinkedCollider.center = Vector3.up * (CurrentHeight * 0.5f);
+
+        LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
+
         OriginalDrag = LinkedRB.drag;
     }
 
@@ -144,6 +176,16 @@ public class CharacterMotor : MonoBehaviour
 
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
+        // activate coyote time?
+        if (wasGrounded && !IsGrounded)
+            CoyoteTimeRemaining = Config.CoyoteTime;
+        else
+        {
+            // reduce the coyote time
+            if (CoyoteTimeRemaining > 0)
+                CoyoteTimeRemaining -= Time.deltaTime;
+        }
+
         UpdateRunning(groundCheckResult);
 
         if (wasRunning != IsRunning)
@@ -155,13 +197,14 @@ public class CharacterMotor : MonoBehaviour
             LinkedCollider.material = Config.Material_Default;
             LinkedRB.drag = OriginalDrag;
             TimeSinceLastFootstepAudio = 0f;
+            CoyoteTimeRemaining = 0f;
 
             if (TimeInAir >= Config.MinAirTimeForLandedSound)
                 OnHitGround.Invoke(LinkedRB.position);
         }
 
         // track how long we have been in the air
-        TimeInAir = IsGrounded ? 0f : (TimeInAir + Time.deltaTime);
+        TimeInAir = IsGroundedOrInCoyoteTime ? 0f : (TimeInAir + Time.deltaTime);
 
         UpdateMovement(groundCheckResult);
     }
@@ -169,7 +212,11 @@ public class CharacterMotor : MonoBehaviour
     protected void LateUpdate()
     {
         UpdateCamera();
+
+        UpdateCrouch();
     }
+
+    public Transform CurrentParent { get; protected set; } = null;
 
     protected RaycastHit UpdateIsGrounded()
     {
@@ -182,8 +229,8 @@ public class CharacterMotor : MonoBehaviour
             return new RaycastHit();
         }
 
-        Vector3 startPos = LinkedRB.position + Vector3.up * Config.Height * 0.5f;
-        float groundCheckDistance = (Config.Height * 0.5f) + Config.GroundedCheckBuffer;
+        Vector3 startPos = LinkedRB.position + Vector3.up * CurrentHeight * 0.5f;
+        float groundCheckDistance = (CurrentHeight * 0.5f) + Config.GroundedCheckBuffer;
 
         // perform our spherecast
         if (Physics.Raycast(startPos, Vector3.down, out hitResult, groundCheckDistance,
@@ -193,7 +240,29 @@ public class CharacterMotor : MonoBehaviour
             JumpCount = 0;
             JumpTimeRemaining = 0f;
 
-            // add auto parenting here
+            // is autoparenting enabled?
+            if (Config.AutoParent)
+            {
+                // auto parent to anything!
+                if (Config.AutoParentMode == CharacterMotorConfig.EAutoParentMode.Anything)
+                {
+                    if (hitResult.transform != CurrentParent)
+                    {
+                        CurrentParent = hitResult.transform;
+                        transform.SetParent(CurrentParent, true);
+                    }
+                }
+                else
+                {
+                    // search for our autoparent script
+                    var target = hitResult.transform.gameObject.GetComponentInParent<CharacterMotorAutoParentTarget>();
+                    if (target != null && target.transform != CurrentParent)
+                    {
+                        CurrentParent = target.transform;
+                        transform.SetParent(CurrentParent, true);
+                    }
+                }
+            }
         }
         else
             IsGrounded = false;
@@ -215,7 +284,7 @@ public class CharacterMotor : MonoBehaviour
         movementVector *= CurrentMaxSpeed;
 
         // are we on the ground?
-        if (IsGrounded)
+        if (IsGroundedOrInCoyoteTime)
         {
             // project onto the current surface
             movementVector = Vector3.ProjectOnPlane(movementVector, groundCheckResult.normal);
@@ -231,7 +300,7 @@ public class CharacterMotor : MonoBehaviour
 
         UpdateJumping(ref movementVector);
 
-        if (IsGrounded && !IsJumping)
+        if (IsGroundedOrInCoyoteTime && !IsJumping)
         {
             CheckForStepUp(ref movementVector);
 
@@ -307,7 +376,7 @@ public class CharacterMotor : MonoBehaviour
             int numJumpsPermitted = Config.CanDoubleJump ? 2 : 1;
             if (JumpCount >= numJumpsPermitted)
                 triggerJump = false;
-            if (!IsGrounded && !IsJumping)
+            if (!IsGroundedOrInCoyoteTime && !IsJumping)
                 triggerJump = false;
 
             // jump is permitted?
@@ -320,6 +389,7 @@ public class CharacterMotor : MonoBehaviour
                 LinkedRB.drag = 0;
                 JumpTimeRemaining += Config.JumpTime;
                 IsJumping = true;
+                CoyoteTimeRemaining = 0f;
                 ++JumpCount;
 
                 OnBeginJump.Invoke(LinkedRB.position);
@@ -337,9 +407,9 @@ public class CharacterMotor : MonoBehaviour
                 IsJumping = false;
             else
             {
-                Vector3 startPos = LinkedRB.position + Vector3.up * Config.Height * 0.5f;
+                Vector3 startPos = LinkedRB.position + Vector3.up * CurrentHeight * 0.5f;
                 float ceilingCheckRadius = Config.Radius + Config.CeilingCheckRadiusBuffer;
-                float ceilingCheckDistance = (Config.Height * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
+                float ceilingCheckDistance = (CurrentHeight * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
 
                 // perform our spherecast
                 RaycastHit ceilingHitResult;
@@ -365,7 +435,7 @@ public class CharacterMotor : MonoBehaviour
             IsRunning = false;
 
         // not grounded
-        if (!IsGrounded)
+        if (!IsGroundedOrInCoyoteTime)
         {
             IsRunning = false;
             return;
@@ -414,6 +484,69 @@ public class CharacterMotor : MonoBehaviour
                                          Config.Camera_MinPitch,
                                          Config.Camera_MaxPitch);
         LinkedCamera.transform.localRotation = Quaternion.Euler(CurrentCameraPitch, 0f, 0f);
+    }
+
+    protected void UpdateCrouch()
+    {
+        // do nothing if either movement or looking are locked
+        if (IsMovementLocked || IsLookingLocked)
+            return;
+
+        // not allowed to crouch?
+        if (!Config.CanCrouch)
+            return;
+
+        // are we jumping or in the air due to falling etc
+        if (IsJumping || !IsGroundedOrInCoyoteTime)
+        {
+            // crouched or transitioning to crouched
+            if (IsCrouched || TargetCrouchState)
+            {
+                TargetCrouchState = false;
+                InCrouchTransition = true;
+            }
+        }
+        else if (Config.IsCrouchToggle)
+        {
+            // toggle crouch state?
+            if (_Input_Crouch)
+            {
+                _Input_Crouch = false;
+
+                TargetCrouchState = !TargetCrouchState;
+                InCrouchTransition = true;
+            }
+        }
+        else
+        {
+            // request crouch state different to current target
+            if (_Input_Crouch != TargetCrouchState)
+            {
+                TargetCrouchState = _Input_Crouch;
+                InCrouchTransition = true;
+            }
+        }
+
+        // update crouch if mid transition
+        if (InCrouchTransition)
+        {
+            // Update the progress
+            CrouchTransitionProgress = Mathf.MoveTowards(CrouchTransitionProgress,
+                                                         TargetCrouchState ? 0f : 1f,
+                                                         Time.deltaTime / Config.CrouchTransitionTime);
+
+            // update the collider and camera
+            LinkedCollider.height = CurrentHeight;
+            LinkedCollider.center = Vector3.up * (CurrentHeight * 0.5f);
+            LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
+
+            // finished changing crouch state
+            if (Mathf.Approximately(CrouchTransitionProgress, TargetCrouchState ? 0f : 1f))
+            {
+                IsCrouched = TargetCrouchState;
+                InCrouchTransition = false;
+            }
+        }
     }
 
     public void SetCursorLock(bool locked)
