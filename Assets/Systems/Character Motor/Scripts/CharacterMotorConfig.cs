@@ -41,6 +41,14 @@ public class CharacterMotorConfig : ScriptableObject
     public float Camera_InitialDiscardTime = 0.1f;
     public float Camera_VerticalOffset = -0.1f;
 
+    [Header("Headbob")]
+    public bool Headbob_Enable = true;
+    public float Headbob_MinSpeedToBob = 0.1f;
+    public float Headbob_TranslationBlendSpeed = 1f;
+    public AnimationCurve Headbob_VTranslationVsSpeedFactor;
+    public AnimationCurve Headbob_HTranslationVsSpeedFactor;
+    public AnimationCurve Headbob_PeriodVsSpeedFactor;
+
     [Header("Movement")]
     public float WalkSpeed = 10f;
     public float RunSpeed = 15f;

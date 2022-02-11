@@ -25,6 +25,7 @@ public class CharacterMotor : MonoBehaviour
     protected Rigidbody LinkedRB;
     protected CapsuleCollider LinkedCollider;
     protected float CurrentCameraPitch = 0f;
+    protected float HeadbobProgress = 0f;
 
     protected float JumpTimeRemaining = 0f;
     protected float TimeSinceLastFootstepAudio = 0f;
@@ -34,7 +35,9 @@ public class CharacterMotor : MonoBehaviour
 
     public bool IsMovementLocked { get; protected set; } = false;
     public bool IsLookingLocked { get; protected set; } = false;
-    public bool IsJumping { get; protected set; } = false;
+    public bool IsJumping => IsInJumpingRisePhase || IsInJumpingFallPhase;
+    public bool IsInJumpingFallPhase { get; protected set; } = false;
+    public bool IsInJumpingRisePhase { get; protected set; } = false;
     public int JumpCount { get; protected set; } = 0;
     public bool IsRunning { get; protected set; } = false;
     public bool IsGrounded { get; protected set; } = true;
@@ -62,7 +65,7 @@ public class CharacterMotor : MonoBehaviour
     {
         get
         {
-            if (IsGroundedOrInCoyoteTime)
+            if (IsGroundedOrInCoyoteTime || IsJumping)
                 return (IsRunning ? Config.RunSpeed : Config.WalkSpeed) * (IsCrouched ? Config.CrouchSpeedMultiplier : 1f);
 
             return Config.CanAirControl ? Config.AirControlMaxSpeed : 0f;
@@ -239,6 +242,7 @@ public class CharacterMotor : MonoBehaviour
             IsGrounded = true;
             JumpCount = 0;
             JumpTimeRemaining = 0f;
+            IsInJumpingFallPhase = false;
 
             // is autoparenting enabled?
             if (Config.AutoParent)
@@ -388,7 +392,8 @@ public class CharacterMotor : MonoBehaviour
                 LinkedCollider.material = Config.Material_Jumping;
                 LinkedRB.drag = 0;
                 JumpTimeRemaining += Config.JumpTime;
-                IsJumping = true;
+                IsInJumpingRisePhase = true;
+                IsInJumpingFallPhase = false;
                 CoyoteTimeRemaining = 0f;
                 ++JumpCount;
 
@@ -396,7 +401,7 @@ public class CharacterMotor : MonoBehaviour
             }
         }
 
-        if (IsJumping)
+        if (IsInJumpingRisePhase)
         {
             // update remaining jump time if not jumping this frame
             if (!triggeredJumpThisFrame)
@@ -404,7 +409,10 @@ public class CharacterMotor : MonoBehaviour
 
             // jumping finished
             if (JumpTimeRemaining <= 0)
-                IsJumping = false;
+            {
+                IsInJumpingRisePhase = false;
+                IsInJumpingFallPhase = true;
+            }
             else
             {
                 Vector3 startPos = LinkedRB.position + Vector3.up * CurrentHeight * 0.5f;
@@ -416,7 +424,8 @@ public class CharacterMotor : MonoBehaviour
                 if (Physics.SphereCast(startPos, ceilingCheckRadius, Vector3.up, out ceilingHitResult,
                                        ceilingCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
                 {
-                    IsJumping = false;
+                    IsInJumpingRisePhase = false;
+                    IsInJumpingFallPhase = true;
                     JumpTimeRemaining = 0f;
                     movementVector.y = 0f;
                 }
@@ -434,8 +443,8 @@ public class CharacterMotor : MonoBehaviour
         if (_Input_Move.magnitude < float.Epsilon)
             IsRunning = false;
 
-        // not grounded
-        if (!IsGroundedOrInCoyoteTime)
+        // not grounded AND not jumping
+        if (!IsGroundedOrInCoyoteTime && !IsJumping)
         {
             IsRunning = false;
             return;
@@ -478,6 +487,39 @@ public class CharacterMotor : MonoBehaviour
 
         // rotate the character
         transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
+
+        // headbob enabled and on the ground?
+        if (Config.Headbob_Enable && IsGrounded)
+        {
+            float currentSpeed = LinkedRB.velocity.magnitude;
+
+            // moving fast enough to bob?
+            Vector3 defaultCameraOffset = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
+            if (currentSpeed >= Config.Headbob_MinSpeedToBob)
+            {
+                float speedFactor = currentSpeed / (Config.CanRun ? Config.RunSpeed : Config.WalkSpeed);
+
+                // update our progress
+                HeadbobProgress += Time.deltaTime / Config.Headbob_PeriodVsSpeedFactor.Evaluate(speedFactor);
+                HeadbobProgress %= 1f;
+
+                // determine the maximum translations
+                float maxVTranslation = Config.Headbob_VTranslationVsSpeedFactor.Evaluate(speedFactor);
+                float maxHTranslation = Config.Headbob_HTranslationVsSpeedFactor.Evaluate(speedFactor);
+
+                float sinProgress = Mathf.Sin(HeadbobProgress * Mathf.PI * 2f);
+
+                // update the camera location
+                defaultCameraOffset += Vector3.up * sinProgress * maxVTranslation;
+                defaultCameraOffset += Vector3.right * sinProgress * maxHTranslation;
+            }
+            else
+                HeadbobProgress = 0f;
+
+            LinkedCamera.transform.localPosition = Vector3.MoveTowards(LinkedCamera.transform.localPosition,
+                                                                       defaultCameraOffset,
+                                                                       Config.Headbob_TranslationBlendSpeed * Time.deltaTime);
+        }
 
         // tilt the camera
         CurrentCameraPitch = Mathf.Clamp(CurrentCameraPitch + cameraPitchDelta,
