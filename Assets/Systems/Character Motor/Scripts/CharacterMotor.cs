@@ -6,7 +6,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(Rigidbody))]
-public class CharacterMotor : MonoBehaviour
+public class CharacterMotor : MonoBehaviour, IDamageable
 {
     [SerializeField] protected CharacterMotorConfig Config;
     [SerializeField] protected Transform LinkedCamera;
@@ -15,6 +15,11 @@ public class CharacterMotor : MonoBehaviour
     [SerializeField] protected UnityEvent<Vector3> OnHitGround = new UnityEvent<Vector3>();
     [SerializeField] protected UnityEvent<Vector3> OnBeginJump = new UnityEvent<Vector3>();
     [SerializeField] protected UnityEvent<Vector3, float> OnFootstep = new UnityEvent<Vector3, float>();
+
+    [SerializeField] protected UnityEvent<float, float> OnStaminaChanged = new UnityEvent<float, float> ();
+    [SerializeField] protected UnityEvent<float, float> OnHealthChanged = new UnityEvent<float, float>();
+    [SerializeField] protected UnityEvent<float> OnTookDamage = new UnityEvent<float>();
+    [SerializeField] protected UnityEvent<CharacterMotor> OnPlayerDied = new UnityEvent<CharacterMotor>();
 
     [Header("Debug Controls")]
     [SerializeField] protected bool DEBUG_OverrideMovement = false;
@@ -33,6 +38,12 @@ public class CharacterMotor : MonoBehaviour
     protected float OriginalDrag;
     protected float Camera_CurrentTime = 0f;
 
+    protected float PreviousStamina = 0f;
+    protected float StaminaRecoveryDelayRemaining = 0f;
+
+    protected float PreviousHealth = 0f;
+    protected float HealthRecoveryDelayRemaining = 0f;
+
     public bool IsMovementLocked { get; protected set; } = false;
     public bool IsLookingLocked { get; protected set; } = false;
     public bool IsJumping => IsInJumpingRisePhase || IsInJumpingFallPhase;
@@ -49,6 +60,10 @@ public class CharacterMotor : MonoBehaviour
     public bool TargetCrouchState { get; protected set; } = false;
     public float CrouchTransitionProgress { get; protected set; } = 1f;
     public float CoyoteTimeRemaining { get; protected set; } = 0f;
+    public float CurrentStamina { get; protected set; } = 0f;
+    public float CurrentHealth { get; protected set; } = 0f;
+    public bool CanCurrentlyJump => Config.CanJump && CurrentStamina >= Config.StaminaCost_Jumping;
+    public bool CanCurrentlyRun => Config.CanRun && CurrentStamina > 0f;
 
     public float CurrentHeight
     {
@@ -140,6 +155,9 @@ public class CharacterMotor : MonoBehaviour
         LinkedRB = GetComponent<Rigidbody>();
         LinkedCollider = GetComponent<CapsuleCollider>();
         SendUIInteractions = Config.SendUIInteractions;
+
+        PreviousStamina = CurrentStamina = Config.MaxStamina;
+        PreviousHealth = CurrentHealth = Config.MaxHealth;
     }
 
     // Start is called before the first frame update
@@ -155,6 +173,9 @@ public class CharacterMotor : MonoBehaviour
         LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
 
         OriginalDrag = LinkedRB.drag;
+
+        OnStaminaChanged.Invoke(CurrentStamina, Config.MaxStamina);
+        OnHealthChanged.Invoke(CurrentHealth, Config.MaxHealth);
     }
 
     // Update is called once per frame
@@ -169,6 +190,21 @@ public class CharacterMotor : MonoBehaviour
         {
             DEBUG_ToggleMovementLock = false;
             IsMovementLocked = !IsMovementLocked;
+        }
+
+        UpdateHealth();
+        UpdateStamina();
+
+        if (PreviousStamina != CurrentStamina)
+        {
+            PreviousStamina = CurrentStamina;
+            OnStaminaChanged.Invoke(CurrentStamina, Config.MaxStamina);
+        }
+
+        if (PreviousHealth != CurrentHealth)
+        {
+            PreviousHealth = CurrentHealth;
+            OnHealthChanged?.Invoke(CurrentHealth, Config.MaxHealth);
         }
     }
 
@@ -315,6 +351,59 @@ public class CharacterMotor : MonoBehaviour
         LinkedRB.velocity = Vector3.MoveTowards(LinkedRB.velocity, movementVector, Config.Acceleration);
     }
 
+    public void OnPerformHeal(GameObject source, float amount)
+    {
+        CurrentHealth = Mathf.Min(CurrentHealth + amount, Config.MaxHealth);
+    }
+
+    public void OnTakeDamage(GameObject source, float amount)
+    {
+        OnTookDamage.Invoke(amount);
+
+        CurrentHealth = Mathf.Max(CurrentHealth - amount, 0f);
+        HealthRecoveryDelayRemaining = Config.HealthRecoveryDelay;
+
+        // have we died?
+        if (CurrentHealth <= 0f && PreviousHealth > 0f)
+            OnPlayerDied.Invoke(this);
+    }
+
+    protected void UpdateHealth()
+    {
+        // do we have health to recover?
+        if (CurrentHealth < Config.MaxHealth)
+        {
+            if (HealthRecoveryDelayRemaining > 0f)
+                HealthRecoveryDelayRemaining -= Time.deltaTime;
+
+            if (HealthRecoveryDelayRemaining <= 0f)
+                CurrentHealth = Mathf.Min(CurrentHealth + Config.HealthRecoveryRate * Time.deltaTime,
+                                          Config.MaxHealth);
+        }
+    }
+
+    protected void UpdateStamina()
+    {
+        // if we're running consume stamina
+        if (IsRunning && IsGrounded)
+            ConsumeStamina(Config.StaminaCost_Running * Time.deltaTime);
+        else if (CurrentStamina < Config.MaxStamina) // if we're able to recover
+        {
+            if (StaminaRecoveryDelayRemaining > 0f)
+                StaminaRecoveryDelayRemaining -= Time.deltaTime;
+
+            if (StaminaRecoveryDelayRemaining <= 0f)
+                CurrentStamina = Mathf.Min(CurrentStamina + Config.StaminaRecoveryRate * Time.deltaTime,
+                                           Config.MaxStamina);
+        }
+    }
+
+    protected void ConsumeStamina(float amount)
+    {
+        CurrentStamina = Mathf.Max(CurrentStamina - amount, 0f);
+        StaminaRecoveryDelayRemaining = Config.StaminaRecoveryDelay;
+    }
+
     protected void UpdateFootstepAudio()
     {
         // is the player attempting to move?
@@ -371,7 +460,7 @@ public class CharacterMotor : MonoBehaviour
     {
         // jump requested?
         bool triggeredJumpThisFrame = false;
-        if (_Input_Jump)
+        if (_Input_Jump && CanCurrentlyJump)
         {
             _Input_Jump = false;
 
@@ -398,6 +487,8 @@ public class CharacterMotor : MonoBehaviour
                 ++JumpCount;
 
                 OnBeginJump.Invoke(LinkedRB.position);
+
+                ConsumeStamina(Config.StaminaCost_Jumping);
             }
         }
 
@@ -439,6 +530,13 @@ public class CharacterMotor : MonoBehaviour
 
     protected void UpdateRunning(RaycastHit groundCheckResult)
     {
+        // no longer able to run?
+        if (!CanCurrentlyRun)
+        {
+            IsRunning = false;
+            return;
+        }
+
         // stop running if no input
         if (_Input_Move.magnitude < float.Epsilon)
             IsRunning = false;

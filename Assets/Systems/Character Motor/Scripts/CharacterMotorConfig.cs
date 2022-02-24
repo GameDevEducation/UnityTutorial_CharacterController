@@ -88,4 +88,16 @@ public class CharacterMotorConfig : ScriptableObject
     public float FootstepInterval_Walking = 0.4f;
     public float FootstepInterval_Running = 0.2f;
     public float MinAirTimeForLandedSound = 0.2f;
+
+    [Header("Stamina")]
+    public float MaxStamina = 100f;
+    public float StaminaCost_Jumping = 10f;
+    public float StaminaCost_Running = 4f;
+    public float StaminaRecoveryRate = 10f;
+    public float StaminaRecoveryDelay = 0.5f;
+
+    [Header("Health")]
+    public float MaxHealth = 100f;
+    public float HealthRecoveryRate = 10f;
+    public float HealthRecoveryDelay = 5f;
 }
