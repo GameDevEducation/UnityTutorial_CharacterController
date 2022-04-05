@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 915a514239d7e644ab590b58fe679a97, type: 3}
+  m_Name: StickySurface
+  m_EditorClassIdentifier: 
+  PersistenceTime: 0.5
+  Effects:
+  - Parameter: 1
+    Type: 0
+    Value: 0.5
+  - Parameter: 3
+    Type: 0
+    Value: 0.5
+  - Parameter: 2
+    Type: 0
+    Value: 0.5
+  - Parameter: 4
+    Type: 0
+    Value: 0.5

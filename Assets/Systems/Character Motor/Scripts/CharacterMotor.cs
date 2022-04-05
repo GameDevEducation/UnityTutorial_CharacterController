@@ -44,6 +44,9 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     protected float PreviousHealth = 0f;
     protected float HealthRecoveryDelayRemaining = 0f;
 
+    public SurfaceEffectSource CurrentSurfaceSource { get; protected set; } = null;
+    protected float CurrentSurfaceLastTickTime;
+
     public bool IsMovementLocked { get; protected set; } = false;
     public bool IsLookingLocked { get; protected set; } = false;
     public bool IsJumping => IsInJumpingRisePhase || IsInJumpingFallPhase;
@@ -80,10 +83,14 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     {
         get
         {
-            if (IsGroundedOrInCoyoteTime || IsJumping)
-                return (IsRunning ? Config.RunSpeed : Config.WalkSpeed) * (IsCrouched ? Config.CrouchSpeedMultiplier : 1f);
+            float speed = 0f;
 
-            return Config.CanAirControl ? Config.AirControlMaxSpeed : 0f;
+            if (IsGroundedOrInCoyoteTime || IsJumping)
+                speed = (IsRunning ? Config.RunSpeed : Config.WalkSpeed) * (IsCrouched ? Config.CrouchSpeedMultiplier : 1f);
+            else
+                speed = Config.CanAirControl ? Config.AirControlMaxSpeed : 0f;
+
+            return CurrentSurfaceSource != null ? CurrentSurfaceSource.Effect(speed, EEffectableParameter.Speed) : speed;
         }
     }
 
@@ -215,6 +222,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
+        UpdateSurfaceEffects();
+
         // activate coyote time?
         if (wasGrounded && !IsGrounded)
             CoyoteTimeRemaining = Config.CoyoteTime;
@@ -280,6 +289,13 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             JumpTimeRemaining = 0f;
             IsInJumpingFallPhase = false;
 
+            // check for a surface effect
+            SurfaceEffectSource surfaceEffectSource = null;
+            if (hitResult.collider.gameObject.TryGetComponent<SurfaceEffectSource>(out surfaceEffectSource))
+                SetSurfaceEffectSource(surfaceEffectSource);
+            else
+                SetSurfaceEffectSource(null);
+
             // is autoparenting enabled?
             if (Config.AutoParent)
             {
@@ -305,7 +321,10 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             }
         }
         else
+        {
+            SetSurfaceEffectSource(null);
             IsGrounded = false;
+        }
 
         return hitResult;
     }
@@ -478,9 +497,13 @@ public class CharacterMotor : MonoBehaviour, IDamageable
                 if (JumpCount == 0)
                     triggeredJumpThisFrame = true;
 
+                float jumpTime = Config.JumpTime;
+                if (CurrentSurfaceSource != null)
+                    jumpTime = CurrentSurfaceSource.Effect(jumpTime, EEffectableParameter.JumpTime);
+
                 LinkedCollider.material = Config.Material_Jumping;
                 LinkedRB.drag = 0;
-                JumpTimeRemaining += Config.JumpTime;
+                JumpTimeRemaining += jumpTime;
                 IsInJumpingRisePhase = true;
                 IsInJumpingFallPhase = false;
                 CoyoteTimeRemaining = 0f;
@@ -522,7 +545,12 @@ public class CharacterMotor : MonoBehaviour, IDamageable
                 }
                 else
                 {
-                    movementVector.y = Config.JumpVelocity;
+                    float jumpVelocity = Config.JumpVelocity;
+
+                    if (CurrentSurfaceSource != null)
+                        jumpVelocity = CurrentSurfaceSource.Effect(jumpVelocity, EEffectableParameter.JumpVelocity);
+
+                    movementVector.y = jumpVelocity;
                 }
             }
         }
@@ -578,10 +606,18 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             return;
         }
 
+        // allow surface to effect sensitivity
+        float hSensitivity = Config.Camera_HorizontalSensitivity;
+        float vSensitivity = Config.Camera_VerticalSensitivity;
+        if (CurrentSurfaceSource != null)
+        {
+            hSensitivity = CurrentSurfaceSource.Effect(hSensitivity, EEffectableParameter.CameraSensitivity);
+            vSensitivity = CurrentSurfaceSource.Effect(vSensitivity, EEffectableParameter.CameraSensitivity);
+        }
+
         // calculate our camera inputs
-        float cameraYawDelta = _Input_Look.x * Config.Camera_HorizontalSensitivity * Time.deltaTime;
-        float cameraPitchDelta = _Input_Look.y * Config.Camera_VerticalSensitivity * Time.deltaTime *
-                                 (Config.Camera_InvertY ? 1f : -1f);
+        float cameraYawDelta = _Input_Look.x * hSensitivity * Time.deltaTime;
+        float cameraPitchDelta = _Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
 
         // rotate the character
         transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
@@ -703,5 +739,33 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     public void SetLookLock(bool locked)
     {
         IsLookingLocked = locked;
+    }
+
+    void UpdateSurfaceEffects()
+    {
+        // no surface effect
+        if (CurrentSurfaceSource == null)
+            return;
+
+        // time to expire the surface effect?
+        if (CurrentSurfaceLastTickTime + CurrentSurfaceSource.PersistenceTime < Time.time)
+        {
+            CurrentSurfaceSource = null;
+            return;
+        }
+    }
+
+    void SetSurfaceEffectSource(SurfaceEffectSource newSource)
+    {
+        // changing to a new effect?
+        if (newSource != null && newSource != CurrentSurfaceSource)
+        {
+            CurrentSurfaceSource = newSource;
+            CurrentSurfaceLastTickTime = Time.time;
+        } // on same source?
+        else if (newSource != null && newSource == CurrentSurfaceSource)
+        {
+            CurrentSurfaceLastTickTime = Time.time;
+        }
     }
 }
