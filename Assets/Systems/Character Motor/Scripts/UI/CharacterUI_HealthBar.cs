@@ -14,7 +14,8 @@ public class CharacterUI_HealthBar : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        MaxBarLength = HealthBarTransform.rect.width;
+        if (HealthBarTransform.rect.width > 0)
+            MaxBarLength = HealthBarTransform.rect.width;
     }
 
     // Update is called once per frame
@@ -25,6 +26,9 @@ public class CharacterUI_HealthBar : MonoBehaviour
 
     public void OnHealthChanged(float currentHealth, float maxHealth)
     {
+        if (MaxBarLength == 0)
+            MaxBarLength = HealthBarTransform.rect.width;
+
         float healthPercentage = currentHealth / maxHealth;
         float newLength = MaxBarLength * healthPercentage;
 

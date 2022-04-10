@@ -6319,10 +6319,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4308623561885781483, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: m_Lens.m_SensorSize.x
-      value: 1.9837838
-      objectReference: {fileID: 0}
     - target: {fileID: 4308623563077746146, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
       propertyPath: m_Name
       value: Player
@@ -6332,22 +6328,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 844191319}
     - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
       propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 3452474152906590501}
@@ -6355,38 +6335,6 @@ PrefabInstance:
       propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 1827346864}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnHealthChanged
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: OnStaminaChanged
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: CharacterUI_HealthBar, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: CharacterUI_StaminaBar, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
-    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
-      propertyPath: OnStaminaChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
     - target: {fileID: 4308623563077746151, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
       propertyPath: m_RootOrder
       value: 3

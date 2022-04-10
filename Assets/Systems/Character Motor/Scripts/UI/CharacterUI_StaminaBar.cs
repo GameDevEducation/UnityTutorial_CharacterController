@@ -14,7 +14,8 @@ public class CharacterUI_StaminaBar : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        MaxBarLength = StaminaBarTransform.rect.width;
+        if (StaminaBarTransform.rect.width > 0)
+            MaxBarLength = StaminaBarTransform.rect.width;
     }
 
     // Update is called once per frame
@@ -25,6 +26,9 @@ public class CharacterUI_StaminaBar : MonoBehaviour
 
     public void OnStaminaChanged(float currentStamina, float maxStamina)
     {
+        if (MaxBarLength == 0)
+            MaxBarLength = StaminaBarTransform.rect.width;
+
         float staminaPercentage = currentStamina / maxStamina;
         float newLength = MaxBarLength * staminaPercentage;
 

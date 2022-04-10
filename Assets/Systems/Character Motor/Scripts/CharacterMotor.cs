@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
@@ -9,7 +8,6 @@ using UnityEngine.EventSystems;
 public class CharacterMotor : MonoBehaviour, IDamageable
 {
     [SerializeField] protected CharacterMotorConfig Config;
-    [SerializeField] protected Transform LinkedCamera;
 
     [SerializeField] protected UnityEvent<bool> OnRunChanged = new UnityEvent<bool> ();
     [SerializeField] protected UnityEvent<Vector3> OnHitGround = new UnityEvent<Vector3>();
@@ -29,8 +27,6 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     protected Rigidbody LinkedRB;
     protected CapsuleCollider LinkedCollider;
-    protected float CurrentCameraPitch = 0f;
-    protected float HeadbobProgress = 0f;
 
     protected float JumpTimeRemaining = 0f;
     protected float TimeSinceLastFootstepAudio = 0f;
@@ -58,7 +54,6 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     public bool InCoyoteTime => CoyoteTimeRemaining > 0f;
     public bool IsGroundedOrInCoyoteTime => IsGrounded || InCoyoteTime;
     public bool IsCrouched { get; protected set; } = false;
-    public bool SendUIInteractions { get; protected set; } = true;
     public bool InCrouchTransition { get; protected set; } = false;
     public bool TargetCrouchState { get; protected set; } = false;
     public float CrouchTransitionProgress { get; protected set; } = 1f;
@@ -94,90 +89,30 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         }
     }
 
-
-    #region Input System Handling
     protected Vector2 _Input_Move;
-    protected void OnMove(InputValue value)
-    {
-        _Input_Move = value.Get<Vector2>();
-    }
-
     protected Vector2 _Input_Look;
-    protected void OnLook(InputValue value)
-    {
-        _Input_Look = value.Get<Vector2>();
-    }
-
     protected bool _Input_Jump;
-    protected void OnJump(InputValue value)
-    {
-        _Input_Jump = value.isPressed;
-    }
-
     protected bool _Input_Run;
-    protected void OnRun(InputValue value)
-    {
-        _Input_Run = value.isPressed;
-    }
-
     protected bool _Input_Crouch;
-    protected void OnCrouch(InputValue value)
-    {
-        _Input_Crouch = value.isPressed;
-    }    
-
     protected bool _Input_PrimaryAction;
-    protected void OnPrimaryAction(InputValue value)
-    {
-        _Input_PrimaryAction = value.isPressed;
-
-        // need to inject pointer event
-        if (_Input_PrimaryAction && SendUIInteractions)
-        {
-            PointerEventData pointerData = new PointerEventData(EventSystem.current);
-            pointerData.position = Mouse.current.position.ReadValue();
-
-            // raycast against the UI
-            List<RaycastResult> results = new List<RaycastResult>();
-            EventSystem.current.RaycastAll(pointerData, results);
-
-            foreach(RaycastResult result in results)
-            {
-                if (result.distance < Config.MaxInteractionDistance)
-                    ExecuteEvents.Execute(result.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
-            }
-        }
-    }
-
     protected bool _Input_SecondaryAction;
-    protected void OnSecondaryAction(InputValue value)
-    {
-        _Input_SecondaryAction = value.isPressed;
-    }
 
-    #endregion
-
-    private void Awake()
+    protected virtual void Awake()
     {
         LinkedRB = GetComponent<Rigidbody>();
-        LinkedCollider = GetComponent<CapsuleCollider>();
-        SendUIInteractions = Config.SendUIInteractions;
+        LinkedCollider = GetComponentInChildren<CapsuleCollider>();
 
         PreviousStamina = CurrentStamina = Config.MaxStamina;
         PreviousHealth = CurrentHealth = Config.MaxHealth;
     }
 
     // Start is called before the first frame update
-    void Start()
+    protected virtual void Start()
     {
-        SetCursorLock(true);
-
         LinkedCollider.material = Config.Material_Default;
         LinkedCollider.radius = Config.Radius;
         LinkedCollider.height = CurrentHeight;
         LinkedCollider.center = Vector3.up * (CurrentHeight * 0.5f);
-
-        LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
 
         OriginalDrag = LinkedRB.drag;
 
@@ -186,7 +121,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     }
 
     // Update is called once per frame
-    void Update()
+    protected void Update()
     {
         if (DEBUG_ToggleLookLock)
         {
@@ -257,10 +192,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         UpdateMovement(groundCheckResult);
     }
 
-    protected void LateUpdate()
+    protected virtual void LateUpdate()
     {
-        UpdateCamera();
-
         UpdateCrouch();
     }
 
@@ -593,75 +526,6 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             IsRunning = _Input_Run;
     }
 
-    protected void UpdateCamera()
-    {
-        // not allowed to look around?
-        if (IsLookingLocked)
-            return;
-
-        // ignore any camera input for a brief time (mostly helps editor side when hitting play button)
-        if (Camera_CurrentTime < Config.Camera_InitialDiscardTime)
-        {
-            Camera_CurrentTime += Time.deltaTime;
-            return;
-        }
-
-        // allow surface to effect sensitivity
-        float hSensitivity = Config.Camera_HorizontalSensitivity;
-        float vSensitivity = Config.Camera_VerticalSensitivity;
-        if (CurrentSurfaceSource != null)
-        {
-            hSensitivity = CurrentSurfaceSource.Effect(hSensitivity, EEffectableParameter.CameraSensitivity);
-            vSensitivity = CurrentSurfaceSource.Effect(vSensitivity, EEffectableParameter.CameraSensitivity);
-        }
-
-        // calculate our camera inputs
-        float cameraYawDelta = _Input_Look.x * hSensitivity * Time.deltaTime;
-        float cameraPitchDelta = _Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
-
-        // rotate the character
-        transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
-
-        // headbob enabled and on the ground?
-        if (Config.Headbob_Enable && IsGrounded)
-        {
-            float currentSpeed = LinkedRB.velocity.magnitude;
-
-            // moving fast enough to bob?
-            Vector3 defaultCameraOffset = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
-            if (currentSpeed >= Config.Headbob_MinSpeedToBob)
-            {
-                float speedFactor = currentSpeed / (Config.CanRun ? Config.RunSpeed : Config.WalkSpeed);
-
-                // update our progress
-                HeadbobProgress += Time.deltaTime / Config.Headbob_PeriodVsSpeedFactor.Evaluate(speedFactor);
-                HeadbobProgress %= 1f;
-
-                // determine the maximum translations
-                float maxVTranslation = Config.Headbob_VTranslationVsSpeedFactor.Evaluate(speedFactor);
-                float maxHTranslation = Config.Headbob_HTranslationVsSpeedFactor.Evaluate(speedFactor);
-
-                float sinProgress = Mathf.Sin(HeadbobProgress * Mathf.PI * 2f);
-
-                // update the camera location
-                defaultCameraOffset += Vector3.up * sinProgress * maxVTranslation;
-                defaultCameraOffset += Vector3.right * sinProgress * maxHTranslation;
-            }
-            else
-                HeadbobProgress = 0f;
-
-            LinkedCamera.transform.localPosition = Vector3.MoveTowards(LinkedCamera.transform.localPosition,
-                                                                       defaultCameraOffset,
-                                                                       Config.Headbob_TranslationBlendSpeed * Time.deltaTime);
-        }
-
-        // tilt the camera
-        CurrentCameraPitch = Mathf.Clamp(CurrentCameraPitch + cameraPitchDelta,
-                                         Config.Camera_MinPitch,
-                                         Config.Camera_MaxPitch);
-        LinkedCamera.transform.localRotation = Quaternion.Euler(CurrentCameraPitch, 0f, 0f);
-    }
-
     protected void UpdateCrouch()
     {
         // do nothing if either movement or looking are locked
@@ -714,7 +578,6 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             // update the collider and camera
             LinkedCollider.height = CurrentHeight;
             LinkedCollider.center = Vector3.up * (CurrentHeight * 0.5f);
-            LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
 
             // finished changing crouch state
             if (Mathf.Approximately(CrouchTransitionProgress, TargetCrouchState ? 0f : 1f))
@@ -725,11 +588,6 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         }
     }
 
-    public void SetCursorLock(bool locked)
-    {
-        Cursor.visible = !locked;
-        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-    }
 
     public void SetMovementLock(bool locked)
     {

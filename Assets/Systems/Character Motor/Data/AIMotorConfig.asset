@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c16ac4e37ab09a2409b642fda03dc2cc, type: 3}
-  m_Name: DefaultFPConfig
+  m_Name: AIMotorConfig
   m_EditorClassIdentifier: 
-  Height: 1.8
+  Height: 2
   Radius: 0.35
   GroundedLayerMask:
     serializedVersion: 2
@@ -135,3 +135,11 @@ MonoBehaviour:
   FootstepInterval_Walking: 0.4
   FootstepInterval_Running: 0.2
   MinAirTimeForLandedSound: 0.2
+  MaxStamina: 100
+  StaminaCost_Jumping: 10
+  StaminaCost_Running: 4
+  StaminaRecoveryRate: 10
+  StaminaRecoveryDelay: 0.5
+  MaxHealth: 100
+  HealthRecoveryRate: 10
+  HealthRecoveryDelay: 5

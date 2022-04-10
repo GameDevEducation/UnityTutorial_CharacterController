@@ -259,7 +259,7 @@ MonoBehaviour:
     ModeOverride: 0
     LensShift: {x: 0, y: 0}
     GateFit: 2
-    m_SensorSize: {x: 1.9837775, y: 1}
+    m_SensorSize: {x: 1.9837838, y: 1}
   m_Transitions:
     m_BlendHint: 0
     m_InheritPosition: 0
@@ -442,11 +442,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 4308623563077746146}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0e483d41df054124095fcf857030fc45, type: 3}
+  m_Script: {fileID: 11500000, guid: 9b4277ecd8816da4d95f2f0782635546, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Config: {fileID: 11400000, guid: f38ac42301e759d49a7f8268ba14ca9f, type: 2}
-  LinkedCamera: {fileID: 4308623561885781482}
   OnRunChanged:
     m_PersistentCalls:
       m_Calls:
@@ -507,7 +506,44 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  OnStaminaChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: CharacterUI_StaminaBar, Assembly-CSharp
+        m_MethodName: OnStaminaChanged
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: CharacterUI_HealthBar, Assembly-CSharp
+        m_MethodName: OnHealthChanged
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnTookDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPlayerDied:
+    m_PersistentCalls:
+      m_Calls: []
   DEBUG_OverrideMovement: 0
   DEBUG_MovementInput: {x: 0, y: 0}
   DEBUG_ToggleLookLock: 0
   DEBUG_ToggleMovementLock: 0
+  LinkedCamera: {fileID: 4308623561885781482}

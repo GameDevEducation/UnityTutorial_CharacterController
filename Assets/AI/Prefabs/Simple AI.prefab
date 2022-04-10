@@ -1417,7 +1417,6 @@ GameObject:
   - component: {fileID: 4051035245672616207}
   - component: {fileID: 4303619829567641142}
   - component: {fileID: 913451187797126327}
-  - component: {fileID: 8627517167072277632}
   m_Layer: 7
   m_Name: Body
   m_TagString: Character
@@ -1490,20 +1489,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &8627517167072277632
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6506262398883222826}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6994316695202192254
 GameObject:
   m_ObjectHideFlags: 0
@@ -1823,8 +1808,9 @@ GameObject:
   - component: {fileID: 1170678054}
   - component: {fileID: 170932077}
   - component: {fileID: 170932078}
-  - component: {fileID: 170932082}
   - component: {fileID: 5401173167965100727}
+  - component: {fileID: 6512718608713236321}
+  - component: {fileID: 6688866026531958662}
   m_Layer: 7
   m_Name: Simple AI
   m_TagString: Character
@@ -1906,25 +1892,6 @@ MonoBehaviour:
   DEBUG_UseMoveTarget: 0
   DEBUG_MoveTarget: {fileID: 0}
   DEBUG_ShowHeading: 0
---- !u!114 &170932082
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8223693791530248982}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab47965e2ca26454e9f9750c6c262f1d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  InitialFunLevel: 0.5
-  BaseFunDecayRate: 0.005
-  FunDisplay: {fileID: 1650712283202898805}
-  InitialEnergyLevel: 0.5
-  BaseEnergyDecayRate: 0.005
-  EnergyDisplay: {fileID: 3683975499223470499}
-  PickInteractionInterval: 2
 --- !u!114 &5401173167965100727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1937,6 +1904,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5aaf5b77b7592224b89d5b83f07fa98a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  HouseholdID: 1
   InitialFunLevel: 0.5
   BaseFunDecayRate: 0.005
   FunDisplay: {fileID: 1650712283202898805}
@@ -1946,3 +1914,59 @@ MonoBehaviour:
   DefaultInteractionScore: 0
   PickInteractionInterval: 2
   InteractionPickSize: 5
+  AvoidInUseObjects: 1
+--- !u!114 &6512718608713236321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8223693791530248982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c117b46de9aacee46b2609ec3934b3fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Config: {fileID: 11400000, guid: c474e5426faee8a4b8825b5529837b72, type: 2}
+  OnRunChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHitGround:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBeginJump:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFootstep:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStaminaChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTookDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnPlayerDied:
+    m_PersistentCalls:
+      m_Calls: []
+  DEBUG_OverrideMovement: 0
+  DEBUG_MovementInput: {x: 0, y: 0}
+  DEBUG_ToggleLookLock: 0
+  DEBUG_ToggleMovementLock: 0
+--- !u!136 &6688866026531958662
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8223693791530248982}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.35
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
