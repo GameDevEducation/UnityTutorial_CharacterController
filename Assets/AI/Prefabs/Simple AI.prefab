@@ -1811,6 +1811,7 @@ GameObject:
   - component: {fileID: 5401173167965100727}
   - component: {fileID: 6512718608713236321}
   - component: {fileID: 6688866026531958662}
+  - component: {fileID: 4786698533072196311}
   m_Layer: 7
   m_Name: Simple AI
   m_TagString: Character
@@ -1847,7 +1848,7 @@ Rigidbody:
   m_Mass: 1
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
@@ -1887,11 +1888,111 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DestinationReachedThreshold: 0.25
-  MaxMoveSpeed: 5
-  RotationSpeed: 120
+  MaxMoveSpeed: 1
+  RotationSpeed: 45
   DEBUG_UseMoveTarget: 0
   DEBUG_MoveTarget: {fileID: 0}
   DEBUG_ShowHeading: 0
+  AngleDeltaToTurnInput:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -180
+      value: -1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: -2
+      value: 0
+      inSlope: 0.0001731903
+      outSlope: 0
+      tangentMode: 65
+      weightedMode: 0
+      inWeight: 0.049334873
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 2
+      value: 0
+      inSlope: -0
+      outSlope: 0.00023300668
+      tangentMode: 5
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.07334139
+    - serializedVersion: 3
+      time: 180
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  SlowDownDistance: 10
+  DistanceToSpeedInput:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  SpeedScaleWithAngleDelta:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 60
+      value: 0.5
+      inSlope: -0.006681583
+      outSlope: -0.006681583
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 180
+      value: 0.1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &5401173167965100727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1970,3 +2071,18 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &4786698533072196311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8223693791530248982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65fb5eb05b20db44f9fc71618509d63c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UpdateMode: 1
+  ApplyGravity: 1
+  LinkedRB: {fileID: 1170678054}

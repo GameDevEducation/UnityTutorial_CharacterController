@@ -5,6 +5,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(GravityTracker))]
 public class CharacterMotor : MonoBehaviour, IDamageable
 {
     [SerializeField] protected CharacterMotorConfig Config;
@@ -26,6 +27,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     [SerializeField] protected bool DEBUG_ToggleMovementLock = false;
 
     protected Rigidbody LinkedRB;
+    protected GravityTracker LocalGravity;
     protected CapsuleCollider LinkedCollider;
 
     protected float JumpTimeRemaining = 0f;
@@ -100,6 +102,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     protected virtual void Awake()
     {
         LinkedRB = GetComponent<Rigidbody>();
+        LocalGravity = GetComponent<GravityTracker>();
         LinkedCollider = GetComponentInChildren<CapsuleCollider>();
 
         PreviousStamina = CurrentStamina = Config.MaxStamina;
@@ -121,7 +124,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     }
 
     // Update is called once per frame
-    protected void Update()
+    protected virtual void Update()
     {
         if (DEBUG_ToggleLookLock)
         {
@@ -154,6 +157,9 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     {
         bool wasGrounded = IsGrounded;
         bool wasRunning = IsRunning;
+
+        // align to the local gravity vector
+        transform.rotation = Quaternion.FromToRotation(transform.up, LocalGravity.Up) * transform.rotation;
 
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
@@ -210,11 +216,11 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             return new RaycastHit();
         }
 
-        Vector3 startPos = LinkedRB.position + Vector3.up * CurrentHeight * 0.5f;
+        Vector3 startPos = LinkedRB.position + LocalGravity.Up * CurrentHeight * 0.5f;
         float groundCheckDistance = (CurrentHeight * 0.5f) + Config.GroundedCheckBuffer;
 
         // perform our spherecast
-        if (Physics.Raycast(startPos, Vector3.down, out hitResult, groundCheckDistance,
+        if (Physics.Raycast(startPos, LocalGravity.Down, out hitResult, groundCheckDistance,
                             Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
@@ -282,12 +288,12 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             movementVector = Vector3.ProjectOnPlane(movementVector, groundCheckResult.normal);
 
             // trying to move up too steep a slope
-            if (movementVector.y > 0 && Vector3.Angle(Vector3.up, groundCheckResult.normal) > Config.SlopeLimit)
+            if (movementVector.y > 0 && Vector3.Angle(LocalGravity.Up, groundCheckResult.normal) > Config.SlopeLimit)
                 movementVector = Vector3.zero;
         } // in the air
         else
         {
-            movementVector += Vector3.down * Config.FallVelocity;
+            movementVector += LocalGravity.Down * Config.FallVelocity;
         }
 
         UpdateJumping(ref movementVector);
@@ -377,7 +383,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     protected void CheckForStepUp(ref Vector3 movementVector)
     {
-        Vector3 lookAheadStartPoint = LinkedRB.position + Vector3.up * (Config.StepCheck_MaxStepHeight * 0.5f);
+        Vector3 lookAheadStartPoint = LinkedRB.position + LocalGravity.Up * (Config.StepCheck_MaxStepHeight * 0.5f);
         Vector3 lookAheadDirection = movementVector.normalized;
         float lookAheadDistance = Config.Radius + Config.StepCheck_LookAheadRange;
 
@@ -385,7 +391,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         if (Physics.Raycast(lookAheadStartPoint, lookAheadDirection, lookAheadDistance, 
                             Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
-            lookAheadStartPoint = LinkedRB.position + Vector3.up * Config.StepCheck_MaxStepHeight;
+            lookAheadStartPoint = LinkedRB.position + LocalGravity.Up * Config.StepCheck_MaxStepHeight;
 
             // check if there is clear space above the step
             if (!Physics.Raycast(lookAheadStartPoint, lookAheadDirection, lookAheadDistance,
@@ -395,11 +401,11 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
                 // check the surface of the step
                 RaycastHit hitResult;
-                if (Physics.Raycast(candidatePoint, Vector3.down, out hitResult, Config.StepCheck_MaxStepHeight * 2f,
+                if (Physics.Raycast(candidatePoint, LocalGravity.Down, out hitResult, Config.StepCheck_MaxStepHeight * 2f,
                                     Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     // is the step shallow enough in slope
-                    if (Vector3.Angle(Vector3.up, hitResult.normal) <= Config.SlopeLimit)
+                    if (Vector3.Angle(LocalGravity.Up, hitResult.normal) <= Config.SlopeLimit)
                     {
                         LinkedRB.position = hitResult.point;
                     }
@@ -462,13 +468,13 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             }
             else
             {
-                Vector3 startPos = LinkedRB.position + Vector3.up * CurrentHeight * 0.5f;
+                Vector3 startPos = LinkedRB.position + LocalGravity.Up * CurrentHeight * 0.5f;
                 float ceilingCheckRadius = Config.Radius + Config.CeilingCheckRadiusBuffer;
                 float ceilingCheckDistance = (CurrentHeight * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
 
                 // perform our spherecast
                 RaycastHit ceilingHitResult;
-                if (Physics.SphereCast(startPos, ceilingCheckRadius, Vector3.up, out ceilingHitResult,
+                if (Physics.SphereCast(startPos, ceilingCheckRadius, LocalGravity.Up, out ceilingHitResult,
                                        ceilingCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     IsInJumpingRisePhase = false;
@@ -483,7 +489,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
                     if (CurrentSurfaceSource != null)
                         jumpVelocity = CurrentSurfaceSource.Effect(jumpVelocity, EEffectableParameter.JumpVelocity);
 
-                    movementVector.y = jumpVelocity;
+                    
+                    movementVector += LocalGravity.Up * (jumpVelocity + Vector3.Dot(movementVector, LocalGravity.Down));
                 }
             }
         }
