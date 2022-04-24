@@ -7,12 +7,6 @@ using UnityEngine.AI;
 [RequireComponent(typeof(AICharacterMotor))]
 public class Navigation_UnityNavMesh : BaseNavigation
 {
-    [SerializeField] AnimationCurve AngleDeltaToTurnInput;
-    [SerializeField] float SlowDownDistance = 2f;
-    [SerializeField] AnimationCurve DistanceToSpeedInput;
-
-    [SerializeField] AnimationCurve SpeedScaleWithAngleDelta;
-
     NavMeshAgent LinkedAgent;
     AICharacterMotor AIMotor;
 
@@ -79,8 +73,7 @@ public class Navigation_UnityNavMesh : BaseNavigation
             // reached destination?
             if (TargetPoint == CurrentPath.Length)
             {
-                AIMotor.SetMovement(0f);
-                AIMotor.SetTurnRate(0f);
+                AIMotor.Stop();
 
                 OnReachedDestination();
                 return;
@@ -88,24 +81,18 @@ public class Navigation_UnityNavMesh : BaseNavigation
 
             // refresh the target information
             targetPosition = CurrentPath[TargetPoint];
-            vecToTarget = targetPosition - transform.position;
-            vecToTarget.y = 0f;
         }
 
-        // calculate the rotation to the target
-        Quaternion targetRotation = Quaternion.LookRotation(vecToTarget, Vector3.up);
-        Quaternion currentRotation = transform.rotation;
-        float angleDelta = Quaternion.Angle(currentRotation, targetRotation);
-
-        AIMotor.SetTurnRate(AngleDeltaToTurnInput.Evaluate(angleDelta) * RotationSpeed);
-
-        float speedInput = DistanceToSpeedInput.Evaluate(vecToTarget.magnitude / SlowDownDistance);
-        speedInput *= SpeedScaleWithAngleDelta.Evaluate(Mathf.Abs(angleDelta));
-
-        AIMotor.SetMovement(speedInput * MaxMoveSpeed);
+        AIMotor.SteerTowards(targetPosition, RotationSpeed, DestinationReachedThreshold, MaxMoveSpeed);
 
         if (DEBUG_ShowHeading)
             Debug.DrawLine(transform.position + Vector3.up, LinkedAgent.steeringTarget, Color.green);
+    }
+
+    protected override void Tick_OrientingAtEndOfPath()
+    {
+        if (AIMotor.LookTowards(LookTarget, RotationSpeed))
+            OnFacingLookTarget();
     }
 
     private void LateUpdate()
@@ -120,8 +107,7 @@ public class Navigation_UnityNavMesh : BaseNavigation
         CurrentPath = null;
         TargetPoint = -1;
 
-        AIMotor.SetMovement(0f);
-        AIMotor.SetTurnRate(0f);
+        AIMotor.Stop();
     }
 
     public override bool FindNearestPoint(Vector3 searchPos, float range, out Vector3 foundPos)

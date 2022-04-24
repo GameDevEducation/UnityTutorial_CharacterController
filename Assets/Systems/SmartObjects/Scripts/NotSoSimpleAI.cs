@@ -113,7 +113,7 @@ public class NotSoSimpleAI : CommonAIBase
         StartedPerforming = false;
 
         // move to the target
-        if (!Navigation.SetDestination(selectedObject.InteractionPoint))
+        if (!Navigation.SetDestination(selectedObject.InteractionPoint, selectedObject.transform))
         {
             Debug.LogError($"Could not move to {selectedObject.name}");
             CurrentInteraction = null;

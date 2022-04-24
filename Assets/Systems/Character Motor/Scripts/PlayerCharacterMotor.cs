@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerCharacterMotor : CharacterMotor
 {
+    [Header("Player")]
     [SerializeField] protected Transform LinkedCamera;
 
     protected float CurrentCameraPitch = 0f;
@@ -15,32 +17,32 @@ public class PlayerCharacterMotor : CharacterMotor
     public bool SendUIInteractions { get; protected set; } = true;
 
     #region Input System Handling
-    protected void OnMove(InputValue value)
+    protected virtual void OnMove(InputValue value)
     {
         _Input_Move = value.Get<Vector2>();
     }
 
-    protected void OnLook(InputValue value)
+    protected virtual void OnLook(InputValue value)
     {
         _Input_Look = value.Get<Vector2>();
     }
 
-    protected void OnJump(InputValue value)
+    protected virtual void OnJump(InputValue value)
     {
         _Input_Jump = value.isPressed;
     }
 
-    protected void OnRun(InputValue value)
+    protected virtual void OnRun(InputValue value)
     {
         _Input_Run = value.isPressed;
     }
 
-    protected void OnCrouch(InputValue value)
+    protected virtual void OnCrouch(InputValue value)
     {
         _Input_Crouch = value.isPressed;
     }
 
-    protected void OnPrimaryAction(InputValue value)
+    protected virtual void OnPrimaryAction(InputValue value)
     {
         _Input_PrimaryAction = value.isPressed;
 
@@ -60,11 +62,17 @@ public class PlayerCharacterMotor : CharacterMotor
                     ExecuteEvents.Execute(result.gameObject, pointerData, ExecuteEvents.pointerClickHandler);
             }
         }
+
+        if (_Input_PrimaryAction)
+            OnPrimary.Invoke();
     }
 
-    protected void OnSecondaryAction(InputValue value)
+    protected virtual void OnSecondaryAction(InputValue value)
     {
         _Input_SecondaryAction = value.isPressed;
+
+        if (_Input_SecondaryAction)
+            OnSecondary.Invoke();
     }
 
     #endregion

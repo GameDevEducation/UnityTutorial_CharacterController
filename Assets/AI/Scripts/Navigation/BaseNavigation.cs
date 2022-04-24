@@ -6,11 +6,12 @@ public abstract class BaseNavigation : MonoBehaviour
 {
     public enum EState
     {
-        Idle                = 0,
-        FindingPath         = 1,
-        FollowingPath       = 2,
+        Idle                    = 0,
+        FindingPath             = 1,
+        FollowingPath           = 2,
+        OrientingAtEndOfPath    = 3,
 
-        Failed_NoPathExists = 100
+        Failed_NoPathExists     = 100
     }
 
     [Header("Path Following")]
@@ -25,8 +26,10 @@ public abstract class BaseNavigation : MonoBehaviour
 
     public Vector3 Destination { get; private set; }
     public EState State { get; private set; } = EState.Idle;
+    public Transform LookTarget { get; private set; } = null;
 
     public bool IsFindingOrFollowingPath => State == EState.FindingPath || State == EState.FollowingPath;
+    public bool HasLookTarget => LookTarget != null;
     public bool IsAtDestination
     {
         get
@@ -55,6 +58,8 @@ public abstract class BaseNavigation : MonoBehaviour
 
         if (State == EState.FindingPath)
             Tick_Pathfinding();
+        if (State == EState.OrientingAtEndOfPath)
+            Tick_OrientingAtEndOfPath();
 
         Tick_Default();
     }
@@ -65,8 +70,10 @@ public abstract class BaseNavigation : MonoBehaviour
             Tick_PathFollowing();
     }
 
-    public bool SetDestination(Vector3 newDestination)
+    public bool SetDestination(Vector3 newDestination, Transform lookTarget = null)
     {
+        LookTarget = lookTarget;
+
         // location is already our destination?
         Vector3 destinationDelta = newDestination - Destination;
         destinationDelta.y = 0f;
@@ -77,7 +84,12 @@ public abstract class BaseNavigation : MonoBehaviour
         destinationDelta = newDestination - transform.position;
         destinationDelta.y = 0f;
         if (destinationDelta.magnitude <= DestinationReachedThreshold)
+        {
+            if (HasLookTarget)
+                State = EState.OrientingAtEndOfPath;
+
             return true;
+        }
 
         Destination = newDestination;
 
@@ -109,10 +121,16 @@ public abstract class BaseNavigation : MonoBehaviour
 
     protected virtual void OnReachedDestination()
     {
+        State = HasLookTarget ? EState.OrientingAtEndOfPath : EState.Idle;
+    }
+
+    protected virtual void OnFacingLookTarget()
+    {
         State = EState.Idle;
     }
 
     protected abstract void Tick_Default();
     protected abstract void Tick_Pathfinding();
     protected abstract void Tick_PathFollowing();
+    protected abstract void Tick_OrientingAtEndOfPath();
 }

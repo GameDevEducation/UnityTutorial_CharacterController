@@ -19,6 +19,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     [SerializeField] protected UnityEvent<float, float> OnHealthChanged = new UnityEvent<float, float>();
     [SerializeField] protected UnityEvent<float> OnTookDamage = new UnityEvent<float>();
     [SerializeField] protected UnityEvent<CharacterMotor> OnPlayerDied = new UnityEvent<CharacterMotor>();
+    [SerializeField] protected UnityEvent OnPrimary = new UnityEvent();
+    [SerializeField] protected UnityEvent OnSecondary = new UnityEvent();
 
     [Header("Debug Controls")]
     [SerializeField] protected bool DEBUG_OverrideMovement = false;
