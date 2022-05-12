@@ -299,7 +299,6 @@ GameObject:
   - component: {fileID: 4308623563077746147}
   - component: {fileID: 4308623563077746148}
   - component: {fileID: 4308623563077746149}
-  - component: {fileID: 4308623561803935853}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -543,23 +542,14 @@ MonoBehaviour:
   OnPlayerDied:
     m_PersistentCalls:
       m_Calls: []
+  OnPrimary:
+    m_PersistentCalls:
+      m_Calls: []
+  OnSecondary:
+    m_PersistentCalls:
+      m_Calls: []
   DEBUG_OverrideMovement: 0
   DEBUG_MovementInput: {x: 0, y: 0}
   DEBUG_ToggleLookLock: 0
   DEBUG_ToggleMovementLock: 0
   LinkedCamera: {fileID: 4308623561885781482}
---- !u!114 &4308623561803935853
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4308623563077746146}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65fb5eb05b20db44f9fc71618509d63c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  UpdateMode: 1
-  ApplyGravity: 1
-  LinkedRB: {fileID: 4308623563077746147}

@@ -5,7 +5,6 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(GravityTracker))]
 public class CharacterMotor : MonoBehaviour, IDamageable
 {
     [SerializeField] protected CharacterMotorConfig Config;
@@ -66,6 +65,9 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     public float CurrentHealth { get; protected set; } = 0f;
     public bool CanCurrentlyJump => Config.CanJump && CurrentStamina >= Config.StaminaCost_Jumping;
     public bool CanCurrentlyRun => Config.CanRun && CurrentStamina > 0f;
+    public Vector3 UpVector => LocalGravity != null ? LocalGravity.Up : Vector3.up;
+    public Vector3 DownVector => LocalGravity != null ? LocalGravity.Down : Vector3.down;
+
 
     public float CurrentHeight
     {
@@ -157,11 +159,14 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     protected void FixedUpdate()
     {
+        if (LocalGravity == null)
+            LinkedRB.AddForce(Physics.gravity, ForceMode.Acceleration);
+
         bool wasGrounded = IsGrounded;
         bool wasRunning = IsRunning;
 
         // align to the local gravity vector
-        transform.rotation = Quaternion.FromToRotation(transform.up, LocalGravity.Up) * transform.rotation;
+        transform.rotation = Quaternion.FromToRotation(transform.up, UpVector) * transform.rotation;
 
         RaycastHit groundCheckResult = UpdateIsGrounded();
 
@@ -218,11 +223,11 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             return new RaycastHit();
         }
 
-        Vector3 startPos = LinkedRB.position + LocalGravity.Up * CurrentHeight * 0.5f;
+        Vector3 startPos = LinkedRB.position + UpVector * CurrentHeight * 0.5f;
         float groundCheckDistance = (CurrentHeight * 0.5f) + Config.GroundedCheckBuffer;
 
         // perform our spherecast
-        if (Physics.Raycast(startPos, LocalGravity.Down, out hitResult, groundCheckDistance,
+        if (Physics.Raycast(startPos, DownVector, out hitResult, groundCheckDistance,
                             Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
             IsGrounded = true;
@@ -290,12 +295,12 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             movementVector = Vector3.ProjectOnPlane(movementVector, groundCheckResult.normal);
 
             // trying to move up too steep a slope
-            if (movementVector.y > 0 && Vector3.Angle(LocalGravity.Up, groundCheckResult.normal) > Config.SlopeLimit)
+            if (movementVector.y > 0 && Vector3.Angle(UpVector, groundCheckResult.normal) > Config.SlopeLimit)
                 movementVector = Vector3.zero;
         } // in the air
         else
         {
-            movementVector += LocalGravity.Down * Config.FallVelocity;
+            movementVector += DownVector * Config.FallVelocity;
         }
 
         UpdateJumping(ref movementVector);
@@ -385,7 +390,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     protected void CheckForStepUp(ref Vector3 movementVector)
     {
-        Vector3 lookAheadStartPoint = LinkedRB.position + LocalGravity.Up * (Config.StepCheck_MaxStepHeight * 0.5f);
+        Vector3 lookAheadStartPoint = LinkedRB.position + UpVector * (Config.StepCheck_MaxStepHeight * 0.5f);
         Vector3 lookAheadDirection = movementVector.normalized;
         float lookAheadDistance = Config.Radius + Config.StepCheck_LookAheadRange;
 
@@ -393,7 +398,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         if (Physics.Raycast(lookAheadStartPoint, lookAheadDirection, lookAheadDistance, 
                             Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
-            lookAheadStartPoint = LinkedRB.position + LocalGravity.Up * Config.StepCheck_MaxStepHeight;
+            lookAheadStartPoint = LinkedRB.position + UpVector * Config.StepCheck_MaxStepHeight;
 
             // check if there is clear space above the step
             if (!Physics.Raycast(lookAheadStartPoint, lookAheadDirection, lookAheadDistance,
@@ -403,11 +408,11 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
                 // check the surface of the step
                 RaycastHit hitResult;
-                if (Physics.Raycast(candidatePoint, LocalGravity.Down, out hitResult, Config.StepCheck_MaxStepHeight * 2f,
+                if (Physics.Raycast(candidatePoint, DownVector, out hitResult, Config.StepCheck_MaxStepHeight * 2f,
                                     Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     // is the step shallow enough in slope
-                    if (Vector3.Angle(LocalGravity.Up, hitResult.normal) <= Config.SlopeLimit)
+                    if (Vector3.Angle(UpVector, hitResult.normal) <= Config.SlopeLimit)
                     {
                         LinkedRB.position = hitResult.point;
                     }
@@ -470,13 +475,13 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             }
             else
             {
-                Vector3 startPos = LinkedRB.position + LocalGravity.Up * CurrentHeight * 0.5f;
+                Vector3 startPos = LinkedRB.position + UpVector * CurrentHeight * 0.5f;
                 float ceilingCheckRadius = Config.Radius + Config.CeilingCheckRadiusBuffer;
                 float ceilingCheckDistance = (CurrentHeight * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
 
                 // perform our spherecast
                 RaycastHit ceilingHitResult;
-                if (Physics.SphereCast(startPos, ceilingCheckRadius, LocalGravity.Up, out ceilingHitResult,
+                if (Physics.SphereCast(startPos, ceilingCheckRadius, UpVector, out ceilingHitResult,
                                        ceilingCheckDistance, Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     IsInJumpingRisePhase = false;
@@ -492,7 +497,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
                         jumpVelocity = CurrentSurfaceSource.Effect(jumpVelocity, EEffectableParameter.JumpVelocity);
 
                     
-                    movementVector += LocalGravity.Up * (jumpVelocity + Vector3.Dot(movementVector, LocalGravity.Down));
+                    movementVector += UpVector * (jumpVelocity + Vector3.Dot(movementVector, DownVector));
                 }
             }
         }
