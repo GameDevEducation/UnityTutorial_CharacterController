@@ -18,7 +18,7 @@ public class AICharacterMotor : CharacterMotor
 
         // determine our velocities
         Vector3 desiredVelocity = vecToTarget.normalized * speed;
-        Vector3 targetVelocity = Vector3.Lerp(LinkedRB.velocity, desiredVelocity, DesiredVelocityWeighting);
+        Vector3 targetVelocity = Vector3.Lerp(State.LinkedRB.velocity, desiredVelocity, DesiredVelocityWeighting);
 
         // get the angle between our current facing and the target facing
         float angleDelta = Mathf.Acos(Vector3.Dot(targetVelocity.normalized, transform.forward)) * Mathf.Rad2Deg;
@@ -38,13 +38,13 @@ public class AICharacterMotor : CharacterMotor
         transform.localRotation = transform.localRotation * Quaternion.AngleAxis(rotationRequired, transform.up);
 
         // calculate the movement input
-        _Input_Move.y = movementScale * Mathf.Clamp(Vector3.Dot(targetVelocity, transform.forward) / CurrentMaxSpeed, -1f, 1f);
-        _Input_Move.x = movementScale * Mathf.Clamp(Vector3.Dot(targetVelocity, transform.right) / CurrentMaxSpeed, -1f, 1f);
+        State.Input_Move.y = movementScale * Mathf.Clamp(Vector3.Dot(targetVelocity, transform.forward) / MovementMode.CurrentMaxSpeed, -1f, 1f);
+        State.Input_Move.x = movementScale * Mathf.Clamp(Vector3.Dot(targetVelocity, transform.right) / MovementMode.CurrentMaxSpeed, -1f, 1f);
     }
 
     public void Stop()
     {
-        _Input_Move = Vector2.zero;
+        State.Input_Move = Vector2.zero;
     }
 
     public bool LookTowards(Transform target, float rotationSpeed)
@@ -76,18 +76,18 @@ public class AICharacterMotor : CharacterMotor
     protected void UpdateCamera()
     {
         // not allowed to look around?
-        if (IsLookingLocked)
+        if (State.IsLookingLocked)
             return;
 
         // allow surface to effect sensitivity
         float hSensitivity = Config.Camera_HorizontalSensitivity;
-        if (CurrentSurfaceSource != null)
+        if (State.CurrentSurfaceSource != null)
         {
-            hSensitivity = CurrentSurfaceSource.Effect(hSensitivity, EEffectableParameter.CameraSensitivity);
+            hSensitivity = State.CurrentSurfaceSource.Effect(hSensitivity, EEffectableParameter.CameraSensitivity);
         }
 
         // calculate our camera inputs
-        float cameraYawDelta = _Input_Look.x * hSensitivity * Time.deltaTime;
+        float cameraYawDelta = State.Input_Look.x * hSensitivity * Time.deltaTime;
 
         // rotate the character
         transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);

@@ -6379,7 +6379,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4308623561885781483, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
       propertyPath: m_Lens.m_SensorSize.x
-      value: 1.3333334
+      value: 1.9837838
       objectReference: {fileID: 0}
     - target: {fileID: 4308623563077746146, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
       propertyPath: m_Name
@@ -6393,6 +6393,26 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 844191319}
+    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
+      propertyPath: Modes.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
+      propertyPath: Modes.Array.data[0]
+      value: -2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
+      propertyPath: Modes.Array.data[1]
+      value: -2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
+      propertyPath: MovementModes.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
+      propertyPath: MovementModes.Array.data[0]
+      value: -2
+      objectReference: {fileID: 0}
     - target: {fileID: 4308623563077746149, guid: 44340da1f8ecbe944bb72a63d9731931, type: 3}
       propertyPath: OnHealthChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 

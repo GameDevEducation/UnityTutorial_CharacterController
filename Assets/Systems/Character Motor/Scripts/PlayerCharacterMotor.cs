@@ -13,41 +13,42 @@ public class PlayerCharacterMotor : CharacterMotor
 
     protected float CurrentCameraPitch = 0f;
     protected float HeadbobProgress = 0f;
+    protected float Camera_CurrentTime = 0f;
 
     public bool SendUIInteractions { get; protected set; } = true;
 
     #region Input System Handling
     protected virtual void OnMove(InputValue value)
     {
-        _Input_Move = value.Get<Vector2>();
+        State.Input_Move = value.Get<Vector2>();
     }
 
     protected virtual void OnLook(InputValue value)
     {
-        _Input_Look = value.Get<Vector2>();
+        State.Input_Look = value.Get<Vector2>();
     }
 
     protected virtual void OnJump(InputValue value)
     {
-        _Input_Jump = value.isPressed;
+        State.Input_Jump = value.isPressed;
     }
 
     protected virtual void OnRun(InputValue value)
     {
-        _Input_Run = value.isPressed;
+        State.Input_Run = value.isPressed;
     }
 
     protected virtual void OnCrouch(InputValue value)
     {
-        _Input_Crouch = value.isPressed;
+        State.Input_Crouch = value.isPressed;
     }
 
     protected virtual void OnPrimaryAction(InputValue value)
     {
-        _Input_PrimaryAction = value.isPressed;
+        State.Input_PrimaryAction = value.isPressed;
 
         // need to inject pointer event
-        if (_Input_PrimaryAction && SendUIInteractions)
+        if (State.Input_PrimaryAction && SendUIInteractions)
         {
             PointerEventData pointerData = new PointerEventData(EventSystem.current);
             pointerData.position = Mouse.current.position.ReadValue();
@@ -63,15 +64,15 @@ public class PlayerCharacterMotor : CharacterMotor
             }
         }
 
-        if (_Input_PrimaryAction)
+        if (State.Input_PrimaryAction)
             OnPrimary.Invoke();
     }
 
     protected virtual void OnSecondaryAction(InputValue value)
     {
-        _Input_SecondaryAction = value.isPressed;
+        State.Input_SecondaryAction = value.isPressed;
 
-        if (_Input_SecondaryAction)
+        if (State.Input_SecondaryAction)
             OnSecondary.Invoke();
     }
 
@@ -90,7 +91,7 @@ public class PlayerCharacterMotor : CharacterMotor
 
         base.Start();
 
-        LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
+        LinkedCamera.transform.localPosition = Vector3.up * (MovementMode.CurrentHeight + Config.Camera_VerticalOffset);
     }
 
     protected override void LateUpdate()
@@ -103,7 +104,7 @@ public class PlayerCharacterMotor : CharacterMotor
     protected void UpdateCamera()
     {
         // not allowed to look around?
-        if (IsLookingLocked)
+        if (State.IsLookingLocked)
             return;
 
         // ignore any camera input for a brief time (mostly helps editor side when hitting play button)
@@ -116,28 +117,28 @@ public class PlayerCharacterMotor : CharacterMotor
         // allow surface to effect sensitivity
         float hSensitivity = Config.Camera_HorizontalSensitivity;
         float vSensitivity = Config.Camera_VerticalSensitivity;
-        if (CurrentSurfaceSource != null)
+        if (State.CurrentSurfaceSource != null)
         {
-            hSensitivity = CurrentSurfaceSource.Effect(hSensitivity, EEffectableParameter.CameraSensitivity);
-            vSensitivity = CurrentSurfaceSource.Effect(vSensitivity, EEffectableParameter.CameraSensitivity);
+            hSensitivity = State.CurrentSurfaceSource.Effect(hSensitivity, EEffectableParameter.CameraSensitivity);
+            vSensitivity = State.CurrentSurfaceSource.Effect(vSensitivity, EEffectableParameter.CameraSensitivity);
         }
 
         // calculate our camera inputs
-        float cameraYawDelta = _Input_Look.x * hSensitivity * Time.deltaTime;
-        float cameraPitchDelta = _Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
+        float cameraYawDelta = State.Input_Look.x * hSensitivity * Time.deltaTime;
+        float cameraPitchDelta = State.Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
 
         // rotate the character
         transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
 
-        LinkedCamera.transform.localPosition = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
+        LinkedCamera.transform.localPosition = Vector3.up * (MovementMode.CurrentHeight + Config.Camera_VerticalOffset);
 
         // headbob enabled and on the ground?
-        if (Config.Headbob_Enable && IsGrounded)
+        if (Config.Headbob_Enable && State.IsGrounded)
         {
-            float currentSpeed = LinkedRB.velocity.magnitude;
+            float currentSpeed = State.LinkedRB.velocity.magnitude;
 
             // moving fast enough to bob?
-            Vector3 defaultCameraOffset = Vector3.up * (CurrentHeight + Config.Camera_VerticalOffset);
+            Vector3 defaultCameraOffset = Vector3.up * (MovementMode.CurrentHeight + Config.Camera_VerticalOffset);
             if (currentSpeed >= Config.Headbob_MinSpeedToBob)
             {
                 float speedFactor = currentSpeed / (Config.CanRun ? Config.RunSpeed : Config.WalkSpeed);

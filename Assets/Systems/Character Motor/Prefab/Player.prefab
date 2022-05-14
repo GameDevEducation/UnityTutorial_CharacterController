@@ -299,6 +299,7 @@ GameObject:
   - component: {fileID: 4308623563077746147}
   - component: {fileID: 4308623563077746148}
   - component: {fileID: 4308623563077746149}
+  - component: {fileID: 3209412252057004078}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -446,66 +447,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Config: {fileID: 11400000, guid: f38ac42301e759d49a7f8268ba14ca9f, type: 2}
-  OnRunChanged:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 400663546}
-        m_TargetAssemblyTypeName: FOVKick, Assembly-CSharp
-        m_MethodName: OnRunStateChanged
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnHitGround:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1645085969}
-        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
-        m_MethodName: OnHitGround
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnBeginJump:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1645085969}
-        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
-        m_MethodName: OnBeginJump
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  OnFootstep:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1645085969}
-        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
-        m_MethodName: OnFootstep
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
   OnStaminaChanged:
     m_PersistentCalls:
       m_Calls:
@@ -553,3 +494,27 @@ MonoBehaviour:
   DEBUG_ToggleLookLock: 0
   DEBUG_ToggleMovementLock: 0
   LinkedCamera: {fileID: 4308623561885781482}
+--- !u!114 &3209412252057004078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4308623563077746146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b3b2421000202c49998138f335cc133, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OnRunChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHitGround:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBeginJump:
+    m_PersistentCalls:
+      m_Calls: []
+  OnFootstep:
+    m_PersistentCalls:
+      m_Calls: []

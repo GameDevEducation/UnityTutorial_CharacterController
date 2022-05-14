@@ -806,14 +806,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 170932078, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
-      propertyPath: MaxMoveSpeed
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 170932078, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
-      propertyPath: RotationSpeed
-      value: 120
-      objectReference: {fileID: 0}
     - target: {fileID: 2239232114933107060, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -845,22 +837,6 @@ PrefabInstance:
     - target: {fileID: 4371533745620825150, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6512718608713236321, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
-      propertyPath: SpeedScaleVsRotationPriority.m_Curve.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6512718608713236321, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
-      propertyPath: SpeedScaleVsRotationPriority.m_Curve.Array.data[1].time
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6512718608713236321, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
-      propertyPath: SpeedScaleVsRotationPriority.m_Curve.Array.data[0].value
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6512718608713236321, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
-      propertyPath: SpeedScaleVsRotationPriority.m_Curve.Array.data[1].value
-      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8223693791530248982, guid: 5cd2917a4acb1874092441bce2275577, type: 3}
       propertyPath: m_Name
