@@ -49,6 +49,9 @@ public class MovementMode_Flying : MonoBehaviour, IMovementMode
 
     public RaycastHit FixedUpdate_GroundedCheck()
     {
+        State.IsGrounded = false;
+        State.IsCrouched = false;
+
         return new RaycastHit();
     }
 

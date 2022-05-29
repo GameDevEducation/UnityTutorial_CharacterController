@@ -68,16 +68,16 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     protected virtual void Awake()
     {
-        MovementMode = GetComponent<IMovementMode>();
+        State.LinkedRB = GetComponent<Rigidbody>();
+        State.LocalGravity = GetComponent<GravityTracker>();
+        State.LinkedCollider = GetComponentInChildren<CapsuleCollider>();
+
+        SwitchMovementMode<MovementMode_Ground>();
 
         if (MovementMode == null)
         {
             throw new System.NullReferenceException($"There is no IMovementMode attached to {gameObject.name}");
         }
-
-        State.LinkedRB = GetComponent<Rigidbody>();
-        State.LocalGravity = GetComponent<GravityTracker>();
-        State.LinkedCollider = GetComponentInChildren<CapsuleCollider>();
 
         PreviousStamina = CurrentStamina = Config.MaxStamina;
         PreviousHealth = CurrentHealth = Config.MaxHealth;
@@ -86,8 +86,6 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     // Start is called before the first frame update
     protected virtual void Start()
     {
-        MovementMode.Initialise(Config, this, State);
-
         OnStaminaChanged.Invoke(CurrentStamina, Config.MaxStamina);
         OnHealthChanged.Invoke(CurrentHealth, Config.MaxHealth);
     }
@@ -252,5 +250,12 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         {
             CurrentSurfaceLastTickTime = Time.time;
         }
+    }
+
+    public void SwitchMovementMode<T>() where T : IMovementMode
+    {
+        MovementMode = GetComponent<T>();
+
+        MovementMode.Initialise(Config, this, State);
     }
 }

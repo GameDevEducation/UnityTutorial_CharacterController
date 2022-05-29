@@ -42,6 +42,33 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "PreviousEquipment",
+                    "type": "Button",
+                    "id": "b671964e-2f09-4e1a-9a62-c40fc7d5fcbf",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "NextEquipment",
+                    "type": "Button",
+                    "id": "2b5e1172-b8ef-4c24-8c5b-1043bf9b75c9",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "UseEquipment",
+                    "type": "Button",
+                    "id": "6974c23a-ac57-45ff-a795-05c638ebf28a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Secondary Action",
                     "type": "Button",
                     "id": "0e3e0a74-1d3c-4033-ad11-3d7e9df114ef",
@@ -406,6 +433,72 @@
                     "processors": "",
                     "groups": "",
                     "action": "Pickup",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ade2daf0-29f9-4d23-861e-83867fa464c1",
+                    "path": "<Gamepad>/dpad/left",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "PreviousEquipment",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9eb45f87-2aaa-4737-ab7d-a76f3b6fc934",
+                    "path": "<Keyboard>/leftBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PreviousEquipment",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1c86c5e5-a65f-4131-954c-bc4630883f82",
+                    "path": "<Gamepad>/dpad/right",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "NextEquipment",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a823ff96-b848-4e62-b54a-6a05980961f6",
+                    "path": "<Keyboard>/rightBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextEquipment",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "30f732fa-396e-4761-9593-070f197ce3f4",
+                    "path": "<Gamepad>/dpad/down",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "UseEquipment",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6e8f7ea3-fac1-473f-92fb-cc8422ba56a9",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UseEquipment",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
