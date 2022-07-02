@@ -50,7 +50,7 @@ public class EquipmentManager : MonoBehaviour
             if (CurrentEquipment != null)
             {
                 LinkedUI.SetEquipmentInUse(CurrentEquipment.IsActive);
-                LinkedUI.SetEquipmentTimeRemaining(CurrentEquipment.HasFuel, CurrentEquipment.GetFuelRemaining());
+                LinkedUI.SetEquipmentTimeRemaining(CurrentEquipment.HasCharges, CurrentEquipment.GetChargesRemaining());
             }
         }
     }
@@ -60,10 +60,16 @@ public class EquipmentManager : MonoBehaviour
         var newEquipment = ScriptableObject.Instantiate(equipment);
 
         newEquipment.LinkTo(this);
-        AllEquipment.Add(newEquipment);
 
-        if (CurrentEquipmentIndex == -1)
-            SelectEquipment(0);
+        newEquipment.OnPickedUp();
+
+        if (newEquipment.AddToInventory)
+        {
+            AllEquipment.Add(newEquipment);
+
+            if (CurrentEquipmentIndex == -1)
+                SelectEquipment(0);
+        }
     }
 
     protected void RemoveEquipment(EquipmentBase equipment)

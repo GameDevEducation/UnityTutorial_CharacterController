@@ -91,7 +91,7 @@ public class PlayerCharacterMotor : CharacterMotor
 
         base.Start();
 
-        LinkedCamera.transform.localPosition = Vector3.up * (MovementMode.CurrentHeight + Config.Camera_VerticalOffset);
+        LinkedCamera.transform.localPosition = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
     }
 
     protected override void LateUpdate()
@@ -130,7 +130,7 @@ public class PlayerCharacterMotor : CharacterMotor
         // rotate the character
         transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
 
-        LinkedCamera.transform.localPosition = Vector3.up * (MovementMode.CurrentHeight + Config.Camera_VerticalOffset);
+        LinkedCamera.transform.localPosition = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
 
         // headbob enabled and on the ground?
         if (Config.Headbob_Enable && State.IsGrounded)
@@ -138,7 +138,7 @@ public class PlayerCharacterMotor : CharacterMotor
             float currentSpeed = State.LinkedRB.velocity.magnitude;
 
             // moving fast enough to bob?
-            Vector3 defaultCameraOffset = Vector3.up * (MovementMode.CurrentHeight + Config.Camera_VerticalOffset);
+            Vector3 defaultCameraOffset = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
             if (currentSpeed >= Config.Headbob_MinSpeedToBob)
             {
                 float speedFactor = currentSpeed / (Config.CanRun ? Config.RunSpeed : Config.WalkSpeed);

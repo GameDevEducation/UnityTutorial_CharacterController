@@ -16,6 +16,5 @@ public interface IMovementMode
 
     void LateUpdate_Tick();
 
-    float CurrentHeight { get; set; }
     float CurrentMaxSpeed { get; set; }
 }

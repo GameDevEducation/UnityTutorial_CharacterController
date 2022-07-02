@@ -7,11 +7,27 @@ using UnityEngine.EventSystems;
 [RequireComponent(typeof(Rigidbody))]
 public class CharacterMotor : MonoBehaviour, IDamageable
 {
+    public enum EParameter
+    {
+        Height,
+        JumpHeight
+    }
+
+    public interface IParameterEffector
+    {
+        float Effect(float currentValue);
+
+        EParameter GetEffectedParameter();
+
+        bool Tick(float deltaTime);
+    }
+
     public class MotorState
     {
         public Rigidbody LinkedRB;
         public GravityTracker LocalGravity;
         public CapsuleCollider LinkedCollider;
+        public CharacterMotorConfig LinkedConfig;
 
         public Vector2 Input_Move;
         public Vector2 Input_Look;
@@ -30,8 +46,91 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         public Transform CurrentParent;
         public SurfaceEffectSource CurrentSurfaceSource;
 
+        public bool InCrouchTransition = false;
+        public bool TargetCrouchState = false;
+        public float CrouchTransitionProgress = 1f;
+
         public Vector3 UpVector => LocalGravity != null ? LocalGravity.Up : Vector3.up;
         public Vector3 DownVector => LocalGravity != null ? LocalGravity.Down : Vector3.down;
+
+        Dictionary<EParameter, List<IParameterEffector>> ActiveEffects = new Dictionary<EParameter, List<IParameterEffector>>();
+        Dictionary<EParameter, float> CachedMultipliers = new Dictionary<EParameter, float>();
+
+        public float CurrentHeight
+        {
+            get
+            {
+                float heightMultiplier = CachedMultipliers[EParameter.Height];
+
+                if (InCrouchTransition)
+                    return heightMultiplier * Mathf.Lerp(LinkedConfig.CrouchHeight, LinkedConfig.Height, CrouchTransitionProgress);
+
+                return heightMultiplier * (IsCrouched ? LinkedConfig.CrouchHeight : LinkedConfig.Height);
+            }
+            set
+            {
+                throw new System.NotImplementedException($"CurrentHeight cannot be set directly. Update the motor config to change height.");
+            }
+        }
+
+        public float JumpVelocity => CachedMultipliers[EParameter.JumpHeight] * LinkedConfig.JumpVelocity;
+
+        public void AddParameterEffector(IParameterEffector newEffector)
+        {
+            if (!ActiveEffects.ContainsKey(newEffector.GetEffectedParameter()))
+                ActiveEffects[newEffector.GetEffectedParameter()] = new List<IParameterEffector>();
+
+            ActiveEffects[newEffector.GetEffectedParameter()].Add(newEffector);
+
+            CacheEffectMultipliers();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            // tick the effects and store if any need to be cleaned up
+            List<IParameterEffector> toCleanup = new List<IParameterEffector>();
+            foreach(var kvp in ActiveEffects)
+            {
+                var effectList = kvp.Value;
+
+                foreach(var effect in effectList)
+                {
+                    if (effect.Tick(deltaTime))
+                        toCleanup.Add(effect);
+                }
+            }
+
+            // perform cleanup
+            foreach(var effect in toCleanup)
+            {
+                ActiveEffects[effect.GetEffectedParameter()].Remove(effect);
+            }
+
+            if (toCleanup.Count > 0)
+                CacheEffectMultipliers();
+        }
+
+        void CacheEffectMultipliers()
+        {
+            foreach(var rawEnumValue in System.Enum.GetValues(typeof(EParameter)))
+            {
+                EParameter parameter = (EParameter)rawEnumValue;
+                CachedMultipliers[parameter] = 1f;
+
+                if (!ActiveEffects.ContainsKey(parameter))
+                    continue;
+
+                foreach(var effector in ActiveEffects[parameter])
+                {
+                    CachedMultipliers[parameter] = effector.Effect(CachedMultipliers[parameter]);
+                }
+            }
+        }
+
+        public MotorState()
+        {
+            CacheEffectMultipliers();
+        }
     }
     protected MotorState State = new MotorState();
 
@@ -60,8 +159,11 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     protected float CurrentSurfaceLastTickTime;
 
+    float PreviousHeight;
+
     public float CurrentStamina { get; protected set; } = 0f;
     public float CurrentHealth { get; protected set; } = 0f;
+    public float MaxHealth => Config.MaxHealth;
 
     public bool CanCurrentlyJump => Config.CanJump && CurrentStamina >= Config.StaminaCost_Jumping;
     public bool CanCurrentlyRun => Config.CanRun && CurrentStamina > 0f;
@@ -71,6 +173,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         State.LinkedRB = GetComponent<Rigidbody>();
         State.LocalGravity = GetComponent<GravityTracker>();
         State.LinkedCollider = GetComponentInChildren<CapsuleCollider>();
+        State.LinkedConfig = Config;
 
         SwitchMovementMode<MovementMode_Ground>();
 
@@ -103,6 +206,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             DEBUG_ToggleMovementLock = false;
             State.IsMovementLocked = !State.IsMovementLocked;
         }
+
+        State.Tick(Time.deltaTime);
 
         UpdateHealth();
         UpdateStamina();
@@ -159,6 +264,19 @@ public class CharacterMotor : MonoBehaviour, IDamageable
     protected virtual void LateUpdate()
     {
         MovementMode.LateUpdate_Tick();
+
+        float currentHeight = State.CurrentHeight;
+        if (PreviousHeight != currentHeight)
+        {
+            State.LinkedCollider.height = currentHeight;
+            State.LinkedCollider.center = Vector3.up * (currentHeight * 0.5f);
+            PreviousHeight = currentHeight;
+        }
+    }
+
+    public void AddParameterEffector(IParameterEffector newEffector)
+    {
+        State.AddParameterEffector(newEffector);
     }
 
     public void OnPerformHeal(GameObject source, float amount)

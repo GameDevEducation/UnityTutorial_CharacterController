@@ -8,18 +8,6 @@ public class MovementMode_Flying : MonoBehaviour, IMovementMode
     protected CharacterMotorConfig Config;
     protected CharacterMotor Motor;
 
-    public float CurrentHeight
-    {
-        get
-        {
-            return Config.Height;
-        }
-        set
-        {
-            throw new System.NotImplementedException($"CurrentHeight cannot be set directly. Update the motor config to change height.");
-        }
-    }
-
     public float CurrentMaxSpeed
     {
         get

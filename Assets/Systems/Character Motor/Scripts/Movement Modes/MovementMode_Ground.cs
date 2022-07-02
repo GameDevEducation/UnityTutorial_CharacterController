@@ -28,25 +28,6 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
     public bool InCoyoteTime => CoyoteTimeRemaining > 0f;
     public bool IsGroundedOrInCoyoteTime => State.IsGrounded || InCoyoteTime;
 
-    public bool InCrouchTransition { get; protected set; } = false;
-    public bool TargetCrouchState { get; protected set; } = false;
-    public float CrouchTransitionProgress { get; protected set; } = 1f;
-
-    public float CurrentHeight
-    {
-        get
-        {
-            if (InCrouchTransition)
-                return Mathf.Lerp(Config.CrouchHeight, Config.Height, CrouchTransitionProgress);
-
-            return State.IsCrouched ? Config.CrouchHeight : Config.Height;
-        }
-        set
-        {
-            throw new System.NotImplementedException($"CurrentHeight cannot be set directly. Update the motor config to change height.");
-        }
-    }
-
     public float CurrentMaxSpeed
     {
         get
@@ -74,8 +55,8 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
 
         State.LinkedCollider.material = Config.Material_Default;
         State.LinkedCollider.radius = Config.Radius;
-        State.LinkedCollider.height = CurrentHeight;
-        State.LinkedCollider.center = Vector3.up * (CurrentHeight * 0.5f);
+        State.LinkedCollider.height = state.CurrentHeight;
+        State.LinkedCollider.center = Vector3.up * (state.CurrentHeight * 0.5f);
 
         OriginalDrag = State.LinkedRB.drag;
     }
@@ -136,8 +117,8 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
             return new RaycastHit();
         }
 
-        Vector3 startPos = State.LinkedRB.position + State.UpVector * CurrentHeight * 0.5f;
-        float groundCheckDistance = (CurrentHeight * 0.5f) + Config.GroundedCheckBuffer;
+        Vector3 startPos = State.LinkedRB.position + State.UpVector * State.CurrentHeight * 0.5f;
+        float groundCheckDistance = (State.CurrentHeight * 0.5f) + Config.GroundedCheckBuffer;
 
         // perform our spherecast
         if (Physics.Raycast(startPos, State.DownVector, out hitResult, groundCheckDistance,
@@ -331,9 +312,9 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
             }
             else
             {
-                Vector3 startPos = State.LinkedRB.position + State.UpVector * CurrentHeight * 0.5f;
+                Vector3 startPos = State.LinkedRB.position + State.UpVector * State.CurrentHeight * 0.5f;
                 float ceilingCheckRadius = Config.Radius + Config.CeilingCheckRadiusBuffer;
-                float ceilingCheckDistance = (CurrentHeight * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
+                float ceilingCheckDistance = (State.CurrentHeight * 0.5f) - Config.Radius + Config.GroundedCheckBuffer;
 
                 // perform our spherecast
                 RaycastHit ceilingHitResult;
@@ -347,7 +328,7 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
                 }
                 else
                 {
-                    float jumpVelocity = Config.JumpVelocity;
+                    float jumpVelocity = State.JumpVelocity;
 
                     if (State.CurrentSurfaceSource != null)
                         jumpVelocity = State.CurrentSurfaceSource.Effect(jumpVelocity, EEffectableParameter.JumpVelocity);
@@ -409,10 +390,10 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
         if (IsJumping || !IsGroundedOrInCoyoteTime)
         {
             // crouched or transitioning to crouched
-            if (State.IsCrouched || TargetCrouchState)
+            if (State.IsCrouched || State.TargetCrouchState)
             {
-                TargetCrouchState = false;
-                InCrouchTransition = true;
+                State.TargetCrouchState = false;
+                State.InCrouchTransition = true;
             }
         }
         else if (Config.IsCrouchToggle)
@@ -422,37 +403,33 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
             {
                 State.Input_Crouch = false;
 
-                TargetCrouchState = !TargetCrouchState;
-                InCrouchTransition = true;
+                State.TargetCrouchState = !State.TargetCrouchState;
+                State.InCrouchTransition = true;
             }
         }
         else
         {
             // request crouch state different to current target
-            if (State.Input_Crouch != TargetCrouchState)
+            if (State.Input_Crouch != State.TargetCrouchState)
             {
-                TargetCrouchState = State.Input_Crouch;
-                InCrouchTransition = true;
+                State.TargetCrouchState = State.Input_Crouch;
+                State.InCrouchTransition = true;
             }
         }
 
         // update crouch if mid transition
-        if (InCrouchTransition)
+        if (State.InCrouchTransition)
         {
             // Update the progress
-            CrouchTransitionProgress = Mathf.MoveTowards(CrouchTransitionProgress,
-                                                         TargetCrouchState ? 0f : 1f,
-                                                         Time.deltaTime / Config.CrouchTransitionTime);
-
-            // update the collider and camera
-            State.LinkedCollider.height = CurrentHeight;
-            State.LinkedCollider.center = Vector3.up * (CurrentHeight * 0.5f);
+            State.CrouchTransitionProgress = Mathf.MoveTowards(State.CrouchTransitionProgress,
+                                                               State.TargetCrouchState ? 0f : 1f,
+                                                               Time.deltaTime / Config.CrouchTransitionTime);
 
             // finished changing crouch state
-            if (Mathf.Approximately(CrouchTransitionProgress, TargetCrouchState ? 0f : 1f))
+            if (Mathf.Approximately(State.CrouchTransitionProgress, State.TargetCrouchState ? 0f : 1f))
             {
-                State.IsCrouched = TargetCrouchState;
-                InCrouchTransition = false;
+                State.IsCrouched = State.TargetCrouchState;
+                State.InCrouchTransition = false;
             }
         }
     }

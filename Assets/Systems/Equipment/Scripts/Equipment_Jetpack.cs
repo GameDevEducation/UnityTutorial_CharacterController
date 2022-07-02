@@ -1,17 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Equipment/Jetpack", fileName = "Jetpack")]
 public class Equipment_Jetpack : EquipmentBase
 {
-    [SerializeField] float Duration = 30f;
+    [FormerlySerializedAs("Duration")][SerializeField] float Fuel = 30f;
 
-    float DurationUsed = 0f;
+    float FuelUsed = 0f;
 
     public override bool ToggleUse()
     {
-        if (DurationUsed >= Duration)
+        if (FuelUsed >= Fuel)
         {
             if (IsActive)
             {
@@ -36,10 +37,10 @@ public class Equipment_Jetpack : EquipmentBase
     {
         if (IsActive)
         {
-            DurationUsed += Time.deltaTime;
+            FuelUsed += Time.deltaTime;
 
             // used maximum duration
-            if (DurationUsed >= Duration)
+            if (FuelUsed >= Fuel)
             {
                 OnStopFlying();
                 return true;
@@ -47,12 +48,6 @@ public class Equipment_Jetpack : EquipmentBase
         }
 
         return false;
-    }
-
-    CharacterMotor LinkedMotor;
-    public override void LinkTo(EquipmentManager manager)
-    {
-        LinkedMotor = manager.GetComponent<CharacterMotor>();
     }
 
     protected void OnStartFlying()
@@ -65,8 +60,8 @@ public class Equipment_Jetpack : EquipmentBase
         LinkedMotor.SwitchMovementMode<MovementMode_Ground>();
     }
 
-    public override float GetFuelRemaining()
+    public override float GetChargesRemaining()
     {
-        return 1f - (DurationUsed / Duration);
+        return 1f - (FuelUsed / Fuel);
     }
 }

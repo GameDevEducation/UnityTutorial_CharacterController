@@ -30,7 +30,7 @@ public class EquipmentUI : MonoBehaviour
         EquipmentName.text = equipment.DisplayName;
 
         SetEquipmentInUse(equipment.IsActive);
-        SetEquipmentTimeRemaining(equipment.HasFuel, equipment.GetFuelRemaining());
+        SetEquipmentTimeRemaining(equipment.HasCharges, equipment.GetChargesRemaining());
     }
 
     public void SetEquipmentInUse(bool inUse)

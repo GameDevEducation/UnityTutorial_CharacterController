@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75be8393cd129e846aaa19be57e744fb, type: 3}
+  m_Name: Potion_Giant
+  m_EditorClassIdentifier: 
+  DisplayName: Giant Potion
+  Icon: {fileID: 0}
+  AddToInventory: 0
+  HasCharges: 0
+  Duration: 10
+  HeightMultiplier: 2
+  JumpHeightMultiplier: 2
