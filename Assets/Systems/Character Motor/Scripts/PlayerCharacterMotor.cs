@@ -4,16 +4,39 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
+using Cinemachine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerCharacterMotor : CharacterMotor
 {
+    public enum ECameraMode
+    {
+        FirstPerson,
+        ThirdPerson_CameraRotatesAvatar
+    }
+
     [Header("Player")]
-    [SerializeField] protected Transform LinkedCamera;
+    [SerializeField] protected ECameraMode CameraMode = ECameraMode.FirstPerson;
+
+    [Header("First Person")]
+    [SerializeField] protected Transform FirstPersonCameraTransform;
+    [SerializeField] protected CinemachineVirtualCamera FirstPersonCamera;
+
+    [Header("Third Person")]
+    [SerializeField] protected Transform ThirdPersonCameraTransform;
+    [SerializeField] protected CinemachineVirtualCamera ThirdPersonCamera;
+    [SerializeField] protected float CameraBoomLength = 15f;
+    [SerializeField] protected float CameraBoom_MinHeight = 2f;
+    [SerializeField] protected float CameraBoom_DefaultHeight = 5f;
+    [SerializeField] protected float CameraBoom_MaxHeight = 15f;
+    [SerializeField] protected Animator AnimController;
 
     protected float CurrentCameraPitch = 0f;
     protected float HeadbobProgress = 0f;
     protected float Camera_CurrentTime = 0f;
+
+    protected Transform CameraTransform => CameraMode == ECameraMode.FirstPerson ? FirstPersonCameraTransform : ThirdPersonCameraTransform;
+    protected CinemachineVirtualCamera LinkedCamera => CameraMode == ECameraMode.FirstPerson ? FirstPersonCamera : ThirdPersonCamera;
 
     public bool SendUIInteractions { get; protected set; } = true;
 
@@ -91,7 +114,33 @@ public class PlayerCharacterMotor : CharacterMotor
 
         base.Start();
 
-        LinkedCamera.transform.localPosition = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
+        ConfigureCameraForMode();
+    }
+
+    protected virtual void ConfigureCameraForMode()
+    {
+        if (CameraMode == ECameraMode.FirstPerson)
+        {
+            CameraTransform.localPosition = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
+            LinkedCamera.LookAt = null;
+        }
+        else
+        {
+            CameraTransform.localPosition = Vector3.up * CameraBoom_DefaultHeight - 
+                                            Vector3.forward * CameraBoomLength;
+            LinkedCamera.LookAt = transform;
+        }
+    }
+
+    protected override void Update()
+    {
+        base.Update();
+
+        float forwardsSpeed = Vector3.Dot(State.LinkedRB.velocity, transform.forward) / Config.RunSpeed;
+        float sidewaysSpeed = Vector3.Dot(State.LinkedRB.velocity, transform.right) / Config.RunSpeed;
+
+        AnimController.SetFloat("ForwardsSpeed", forwardsSpeed);
+        AnimController.SetFloat("SidewaysSpeed", sidewaysSpeed);
     }
 
     protected override void LateUpdate()
@@ -123,6 +172,14 @@ public class PlayerCharacterMotor : CharacterMotor
             vSensitivity = State.CurrentSurfaceSource.Effect(vSensitivity, EEffectableParameter.CameraSensitivity);
         }
 
+        if (CameraMode == ECameraMode.FirstPerson)
+            UpdateCamera_FirstPerson(hSensitivity, vSensitivity);
+        else
+            UpdateCamera_ThirdPerson(hSensitivity, vSensitivity);
+    }
+
+    protected void UpdateCamera_FirstPerson(float hSensitivity, float vSensitivity)
+    {
         // calculate our camera inputs
         float cameraYawDelta = State.Input_Look.x * hSensitivity * Time.deltaTime;
         float cameraPitchDelta = State.Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
@@ -130,7 +187,7 @@ public class PlayerCharacterMotor : CharacterMotor
         // rotate the character
         transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
 
-        LinkedCamera.transform.localPosition = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
+        CameraTransform.localPosition = Vector3.up * (State.CurrentHeight + Config.Camera_VerticalOffset);
 
         // headbob enabled and on the ground?
         if (Config.Headbob_Enable && State.IsGrounded)
@@ -160,16 +217,33 @@ public class PlayerCharacterMotor : CharacterMotor
             else
                 HeadbobProgress = 0f;
 
-            LinkedCamera.transform.localPosition = Vector3.MoveTowards(LinkedCamera.transform.localPosition,
-                                                                       defaultCameraOffset,
-                                                                       Config.Headbob_TranslationBlendSpeed * Time.deltaTime);
+            CameraTransform.localPosition = Vector3.MoveTowards(CameraTransform.localPosition,
+                                                                defaultCameraOffset,
+                                                                Config.Headbob_TranslationBlendSpeed * Time.deltaTime);
         }
 
         // tilt the camera
         CurrentCameraPitch = Mathf.Clamp(CurrentCameraPitch + cameraPitchDelta,
                                          Config.Camera_MinPitch,
                                          Config.Camera_MaxPitch);
-        LinkedCamera.transform.localRotation = Quaternion.Euler(CurrentCameraPitch, 0f, 0f);
+        CameraTransform.localRotation = Quaternion.Euler(CurrentCameraPitch, 0f, 0f);
+    }
+
+    protected void UpdateCamera_ThirdPerson(float hSensitivity, float vSensitivity)
+    {
+        // calculate our camera inputs
+        float cameraYawDelta = State.Input_Look.x * hSensitivity * Time.deltaTime;
+        float cameraHeightDelta = State.Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
+
+        Vector3 localCameraPos = CameraTransform.localPosition;
+
+        if (CameraMode == ECameraMode.ThirdPerson_CameraRotatesAvatar)
+        {
+            transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
+        }
+
+        localCameraPos.y = Mathf.Clamp(localCameraPos.y + cameraHeightDelta, CameraBoom_MinHeight, CameraBoom_MaxHeight);
+        CameraTransform.localPosition = localCameraPos;
     }
 
     public void SetCursorLock(bool locked)
