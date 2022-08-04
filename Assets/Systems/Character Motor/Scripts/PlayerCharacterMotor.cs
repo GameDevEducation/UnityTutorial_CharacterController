@@ -136,11 +136,14 @@ public class PlayerCharacterMotor : CharacterMotor
     {
         base.Update();
 
-        float forwardsSpeed = Vector3.Dot(State.LinkedRB.velocity, transform.forward) / Config.RunSpeed;
-        float sidewaysSpeed = Vector3.Dot(State.LinkedRB.velocity, transform.right) / Config.RunSpeed;
+        if (AnimController != null)
+        {
+            float forwardsSpeed = Vector3.Dot(State.LinkedRB.velocity, transform.forward) / Config.RunSpeed;
+            float sidewaysSpeed = Vector3.Dot(State.LinkedRB.velocity, transform.right) / Config.RunSpeed;
 
-        AnimController.SetFloat("ForwardsSpeed", forwardsSpeed);
-        AnimController.SetFloat("SidewaysSpeed", sidewaysSpeed);
+            AnimController.SetFloat("ForwardsSpeed", forwardsSpeed);
+            AnimController.SetFloat("SidewaysSpeed", sidewaysSpeed);
+        }
     }
 
     protected override void LateUpdate()
