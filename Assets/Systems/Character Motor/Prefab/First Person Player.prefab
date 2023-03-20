@@ -259,7 +259,8 @@ MonoBehaviour:
     ModeOverride: 0
     LensShift: {x: 0, y: 0}
     GateFit: 2
-    m_SensorSize: {x: 1.4283708, y: 1}
+    FocusDistance: 10
+    m_SensorSize: {x: 1, y: 1}
   m_Transitions:
     m_BlendHint: 0
     m_InheritPosition: 0
@@ -300,6 +301,9 @@ GameObject:
   - component: {fileID: 4308623563077746148}
   - component: {fileID: 4308623563077746149}
   - component: {fileID: 3209412252057004078}
+  - component: {fileID: 2055606489621271891}
+  - component: {fileID: 2870947298435448293}
+  - component: {fileID: 5722004864991778344}
   m_Layer: 6
   m_Name: First Person Player
   m_TagString: Player
@@ -322,7 +326,7 @@ Transform:
   - {fileID: 4308623561885781482}
   - {fileID: 1645085971}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &4308623563077746150
 MeshFilter:
@@ -382,8 +386,17 @@ CapsuleCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4308623563077746146}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
+  serializedVersion: 2
   m_Radius: 0.35
   m_Height: 1.8
   m_Direction: 1
@@ -395,10 +408,21 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4308623563077746146}
-  serializedVersion: 2
+  serializedVersion: 4
   m_Mass: 1
   m_Drag: 0
   m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
@@ -502,6 +526,7 @@ MonoBehaviour:
   CameraBoom_MinHeight: 2
   CameraBoom_DefaultHeight: 5
   CameraBoom_MaxHeight: 15
+  AnimController: {fileID: 0}
 --- !u!114 &3209412252057004078
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -519,10 +544,90 @@ MonoBehaviour:
       m_Calls: []
   OnHitGround:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1645085969}
+        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
+        m_MethodName: OnHitGround
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnBeginJump:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1645085969}
+        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
+        m_MethodName: OnBeginJump
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   OnFootstep:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1645085969}
+        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
+        m_MethodName: OnFootstep
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &2055606489621271891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4308623563077746146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f64d627860aa93b42aa7b51a57852b06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DetectionInterval: 0.1
+  DetectionRange: 2.5
+  DetectionMask:
+    serializedVersion: 2
+    m_Bits: 145
+  OverrideCamera: {fileID: 0}
+--- !u!114 &2870947298435448293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4308623563077746146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9009a05e433a3bf47a69c2b9c026c04e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DEBUG_EquipmentToAdd: {fileID: 11400000, guid: 638da5c5e9f8c9b4aa834fb0b66df039, type: 2}
+  DEBUG_AddEquipment: 0
+--- !u!114 &5722004864991778344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4308623563077746146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 531a9f7bd0001114d9da3aa97fc61221, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
