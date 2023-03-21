@@ -6,7 +6,7 @@ using UnityEngine.Events;
 public class MovementMode_Ground : MonoBehaviour, IMovementMode
 {
     [SerializeField] protected UnityEvent<bool> OnRunChanged = new UnityEvent<bool>();
-    [SerializeField] protected UnityEvent<Vector3> OnHitGround = new UnityEvent<Vector3>();
+    [SerializeField] protected UnityEvent<Vector3, float> OnHitGround = new UnityEvent<Vector3, float>();
     [SerializeField] protected UnityEvent<Vector3> OnBeginJump = new UnityEvent<Vector3>();
     [SerializeField] protected UnityEvent<Vector3, float> OnFootstep = new UnityEvent<Vector3, float>();
 
@@ -16,7 +16,7 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
 
     protected float JumpTimeRemaining = 0f;
     protected float TimeSinceLastFootstepAudio = 0f;
-    protected float TimeInAir = 0f;
+    protected float TimeFalling = 0f;
     protected float OriginalDrag;
 
     public bool IsJumping => IsInJumpingRisePhase || IsInJumpingFallPhase;
@@ -101,9 +101,8 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
         State.LinkedRB.drag = OriginalDrag;
         TimeSinceLastFootstepAudio = 0f;
         CoyoteTimeRemaining = 0f;
-
-        if (TimeInAir >= Config.MinAirTimeForLandedSound)
-            OnHitGround.Invoke(State.LinkedRB.position);
+       
+        OnHitGround.Invoke(State.LinkedRB.position, State.LastRequestedVelocity.magnitude);
     }
 
     protected RaycastHit UpdateIsGrounded()
@@ -121,10 +120,12 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
         float groundCheckDistance = (State.CurrentHeight * 0.5f) + Config.GroundedCheckBuffer;
 
         // perform our spherecast
-        if (Physics.Raycast(startPos, State.DownVector, out hitResult, groundCheckDistance,
+        float radius = Config.Radius * 0.25f;
+        if (Physics.SphereCast(startPos, radius, State.DownVector, out hitResult, groundCheckDistance,
                             Config.GroundedLayerMask, QueryTriggerInteraction.Ignore))
         {
             State.IsGrounded = true;
+            TimeFalling = 0f;
             JumpCount = 0;
             JumpTimeRemaining = 0f;
             IsInJumpingFallPhase = false;
@@ -161,8 +162,14 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
 
     public void FixedUpdate_TickMovement(RaycastHit groundCheckResult)
     {
-        // track how long we have been in the air
-        TimeInAir = IsGroundedOrInCoyoteTime ? 0f : (TimeInAir + Time.deltaTime);
+        if (!IsGroundedOrInCoyoteTime)
+        {
+            // track how long we have been in the air
+            State.TimeInAir += Time.deltaTime;
+
+            if (!IsJumping || IsInJumpingFallPhase)
+                TimeFalling += Time.deltaTime;
+        }
 
         UpdateMovement(groundCheckResult);
     }
@@ -190,7 +197,7 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
         } // in the air
         else
         {
-            movementVector += State.DownVector * Config.FallVelocity;
+            movementVector += State.DownVector * Config.FallAcceleration * TimeFalling;
         }
 
         UpdateJumping(ref movementVector);
@@ -309,6 +316,7 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
             {
                 IsInJumpingRisePhase = false;
                 IsInJumpingFallPhase = true;
+                TimeFalling = 0;
             }
             else
             {

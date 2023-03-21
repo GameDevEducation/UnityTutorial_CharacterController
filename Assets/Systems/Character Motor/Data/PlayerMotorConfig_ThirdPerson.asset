@@ -122,8 +122,12 @@ MonoBehaviour:
   CrouchHeight: 0.9
   CrouchSpeedMultiplier: 0.5
   CrouchTransitionTime: 0.25
-  FallVelocity: 12.5
+  FallAcceleration: 20
   CoyoteTime: 0.1
+  MinFallSpeedToTakeDamage: 15
+  FallSpeedForMaximumDamage: 50
+  MinimumFallDamagePercentage: 0.05
+  MaximumFallDamagePercentage: 1
   CanAirControl: 1
   AirControlMaxSpeed: 10
   CanJump: 1
@@ -135,3 +139,20 @@ MonoBehaviour:
   FootstepInterval_Walking: 0.4
   FootstepInterval_Running: 0.2
   MinAirTimeForLandedSound: 0.2
+  MaxStamina: 100
+  StaminaCost_Jumping: 10
+  StaminaCost_Running: 4
+  StaminaRecoveryRate: 10
+  StaminaRecoveryDelay: 0.5
+  MaxHealth: 100
+  HealthRecoveryRate: 10
+  HealthRecoveryDelay: 5
+  EnableHaptics: 1
+  ImpactHaptics:
+    Effect: {fileID: 11400000, guid: 02fabb5c09f8be0459ac436228679be4, type: 2}
+    MinIntensity: 0.75
+    MaxIntensity: 1
+  DamageHaptics:
+    Effect: {fileID: 11400000, guid: 2af536787aecfdd4d82fbdb9a245cb07, type: 2}
+    MinIntensity: 0.1
+    MaxIntensity: 1

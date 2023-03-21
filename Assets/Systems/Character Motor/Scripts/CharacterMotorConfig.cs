@@ -67,8 +67,12 @@ public class CharacterMotorConfig : ScriptableObject
     public float CrouchTransitionTime = 0.25f;
 
     [Header("Falling")]
-    public float FallVelocity = 12.5f;
+    public float FallAcceleration = 20f;
     public float CoyoteTime = 0.1f;
+    public float MinFallSpeedToTakeDamage = 15f;
+    public float FallSpeedForMaximumDamage = 50f;
+    [Range(0f, 1f)] public float MinimumFallDamagePercentage = 0.05f;
+    [Range(0f, 1f)] public float MaximumFallDamagePercentage = 1.0f;
 
     [Header("Air Control")]
     public bool CanAirControl = true;
@@ -100,4 +104,24 @@ public class CharacterMotorConfig : ScriptableObject
     public float MaxHealth = 100f;
     public float HealthRecoveryRate = 10f;
     public float HealthRecoveryDelay = 5f;
+
+    [System.Serializable]
+    public class HapticEffectConfig
+    {
+        public HapticEffect Effect;
+        [Range(0f, 1f)] public float MinIntensity = 0f;
+        [Range(0f, 1f)] public float MaxIntensity = 1f;
+
+        public float GetIntensity(float percentage)
+        {
+            return Mathf.Lerp(MinIntensity, MaxIntensity, percentage);
+        }
+
+        public bool IsValid => Effect != null;
+    }
+
+    [Header("Haptics")]
+    public bool EnableHaptics = true;
+    public HapticEffectConfig ImpactHaptics;
+    public HapticEffectConfig DamageHaptics;
 }

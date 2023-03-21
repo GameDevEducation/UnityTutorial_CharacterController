@@ -340,7 +340,7 @@ Transform:
   - {fileID: 4952817806957162646}
   - {fileID: 8717287440330774071}
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!33 &9183050475636213859
 MeshFilter:
@@ -527,6 +527,21 @@ MonoBehaviour:
   OnSecondary:
     m_PersistentCalls:
       m_Calls: []
+  OnPlayImpactGroundSound:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4952817806957162644}
+        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
+        m_MethodName: OnHitGround
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   DEBUG_OverrideMovement: 0
   DEBUG_MovementInput: {x: 0, y: 0}
   DEBUG_ToggleLookLock: 0
@@ -559,8 +574,8 @@ MonoBehaviour:
   OnHitGround:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4952817806957162644}
-        m_TargetAssemblyTypeName: FootstepAudio_Builtin, Assembly-CSharp
+      - m_Target: {fileID: 9183050475636213856}
+        m_TargetAssemblyTypeName: CharacterMotor, Assembly-CSharp
         m_MethodName: OnHitGround
         m_Mode: 0
         m_Arguments:

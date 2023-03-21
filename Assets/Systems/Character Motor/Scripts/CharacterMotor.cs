@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Mail;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -49,6 +50,10 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         public bool InCrouchTransition = false;
         public bool TargetCrouchState = false;
         public float CrouchTransitionProgress = 1f;
+
+        public float TimeInAir = 0f;
+
+        public Vector3 LastRequestedVelocity = Vector3.zero;
 
         public Vector3 UpVector => LocalGravity != null ? LocalGravity.Up : Vector3.up;
         public Vector3 DownVector => LocalGravity != null ? LocalGravity.Down : Vector3.down;
@@ -136,12 +141,13 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
     [SerializeField] protected CharacterMotorConfig Config;
 
-    [SerializeField] protected UnityEvent<float, float> OnStaminaChanged = new UnityEvent<float, float> ();
-    [SerializeField] protected UnityEvent<float, float> OnHealthChanged = new UnityEvent<float, float>();
-    [SerializeField] protected UnityEvent<float> OnTookDamage = new UnityEvent<float>();
-    [SerializeField] protected UnityEvent<CharacterMotor> OnPlayerDied = new UnityEvent<CharacterMotor>();
-    [SerializeField] protected UnityEvent OnPrimary = new UnityEvent();
-    [SerializeField] protected UnityEvent OnSecondary = new UnityEvent();
+    [SerializeField] protected UnityEvent<float, float> OnStaminaChanged = new();
+    [SerializeField] protected UnityEvent<float, float> OnHealthChanged = new();
+    [SerializeField] protected UnityEvent<float> OnTookDamage = new();
+    [SerializeField] protected UnityEvent<CharacterMotor> OnPlayerDied = new();
+    [SerializeField] protected UnityEvent OnPrimary = new();
+    [SerializeField] protected UnityEvent OnSecondary = new();
+    [SerializeField] protected UnityEvent<Vector3> OnPlayImpactGroundSound = new();
 
     [Header("Debug Controls")]
     [SerializeField] protected bool DEBUG_OverrideMovement = false;
@@ -259,6 +265,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
             SetSurfaceEffectSource(null);
 
         MovementMode.FixedUpdate_TickMovement(groundCheckResult);
+
+        State.LastRequestedVelocity = State.LinkedRB.velocity;
     }
 
     protected virtual void LateUpdate()
@@ -290,6 +298,14 @@ public class CharacterMotor : MonoBehaviour, IDamageable
 
         CurrentHealth = Mathf.Max(CurrentHealth - amount, 0f);
         HealthRecoveryDelayRemaining = Config.HealthRecoveryDelay;
+
+        if (Config.EnableHaptics && Config.DamageHaptics.IsValid)
+        {
+            float damagePercentage = amount / Config.MaxHealth;
+
+            HapticsManager.Instance.PlayEffectWithIntensity(Config.DamageHaptics.Effect,
+                Config.DamageHaptics.GetIntensity(damagePercentage));
+        }
 
         // have we died?
         if (CurrentHealth <= 0f && PreviousHealth > 0f)
@@ -375,5 +391,33 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         MovementMode = GetComponent<T>();
 
         MovementMode.Initialise(Config, this, State);
+    }
+
+    public void OnHitGround(Vector3 location, float impactSpeed)
+    {
+        if (State.TimeInAir >= Config.MinAirTimeForLandedSound)
+        {
+            OnPlayImpactGroundSound.Invoke(location);
+        }
+
+        if (impactSpeed >= Config.MinFallSpeedToTakeDamage)
+        {
+            float speedProportion = Mathf.InverseLerp(Config.MinFallSpeedToTakeDamage,
+                                                        Config.FallSpeedForMaximumDamage, 
+                                                        impactSpeed);
+
+            float damagePercentage = Mathf.Lerp(Config.MinimumFallDamagePercentage,
+                                                Config.MaximumFallDamagePercentage, 
+                                                speedProportion);
+
+            float actualDamageToApply = Config.MaxHealth * damagePercentage;
+            OnTakeDamage(null, actualDamageToApply);
+
+            if (Config.EnableHaptics && Config.ImpactHaptics.IsValid)
+            {
+                HapticsManager.Instance.PlayEffectWithIntensity(Config.ImpactHaptics.Effect,
+                    Config.ImpactHaptics.GetIntensity(damagePercentage));
+            }
+        }
     }
 }
