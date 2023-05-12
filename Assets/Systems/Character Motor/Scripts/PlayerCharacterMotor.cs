@@ -12,7 +12,8 @@ public class PlayerCharacterMotor : CharacterMotor
     public enum ECameraMode
     {
         FirstPerson,
-        ThirdPerson_CameraRotatesAvatar
+        ThirdPerson_CameraRotatesAvatar,
+        ThirdPerson_MovementRotatesAvatar
     }
 
     [Header("Player")]
@@ -32,6 +33,7 @@ public class PlayerCharacterMotor : CharacterMotor
     [SerializeField] protected Animator AnimController;
 
     protected float CurrentCameraPitch = 0f;
+    protected float CurrentCameraYaw = 0f;
     protected float HeadbobProgress = 0f;
     protected float Camera_CurrentTime = 0f;
 
@@ -106,6 +108,9 @@ public class PlayerCharacterMotor : CharacterMotor
         base.Awake();
 
         SendUIInteractions = Config.SendUIInteractions;
+
+        if (CameraMode == ECameraMode.ThirdPerson_MovementRotatesAvatar)
+            State.MovementFrameTransform = ThirdPersonCameraTransform;
     }
 
     protected override void Start()
@@ -129,6 +134,18 @@ public class PlayerCharacterMotor : CharacterMotor
             CameraTransform.localPosition = Vector3.up * CameraBoom_DefaultHeight - 
                                             Vector3.forward * CameraBoomLength;
             LinkedCamera.LookAt = transform;
+
+            if (CameraMode == ECameraMode.ThirdPerson_MovementRotatesAvatar)
+            {
+                float currentAngle = transform.eulerAngles.y * Mathf.Deg2Rad;
+                Vector3 localCameraPos = new Vector3(CameraBoomLength * Mathf.Sin(currentAngle),
+                                                     CameraBoom_DefaultHeight,
+                                                     CameraBoomLength * Mathf.Cos(currentAngle));
+
+                CameraTransform.localPosition = localCameraPos;
+
+                ThirdPersonCameraTransform.SetParent(null);
+            }
         }
     }
 
@@ -238,15 +255,35 @@ public class PlayerCharacterMotor : CharacterMotor
         float cameraYawDelta = State.Input_Look.x * hSensitivity * Time.deltaTime;
         float cameraHeightDelta = State.Input_Look.y * vSensitivity * Time.deltaTime * (Config.Camera_InvertY ? 1f : -1f);
 
-        Vector3 localCameraPos = CameraTransform.localPosition;
-
         if (CameraMode == ECameraMode.ThirdPerson_CameraRotatesAvatar)
         {
-            transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
-        }
+            Vector3 localCameraPos = CameraTransform.localPosition;
 
-        localCameraPos.y = Mathf.Clamp(localCameraPos.y + cameraHeightDelta, CameraBoom_MinHeight, CameraBoom_MaxHeight);
-        CameraTransform.localPosition = localCameraPos;
+            transform.localRotation = transform.localRotation * Quaternion.Euler(0f, cameraYawDelta, 0f);
+
+            localCameraPos.y = Mathf.Clamp(localCameraPos.y + cameraHeightDelta, CameraBoom_MinHeight, CameraBoom_MaxHeight);
+            CameraTransform.localPosition = localCameraPos;
+        }
+        else
+        {
+            if (!Mathf.Approximately(State.LastRequestedVelocity.sqrMagnitude, 0f)) 
+            {
+                transform.rotation = Quaternion.LookRotation(State.LastRequestedVelocity, State.UpVector);
+            }
+
+            CurrentCameraYaw += cameraYawDelta;
+
+            float currentCameraHeight = Vector3.Dot(CameraTransform.position - transform.position, State.UpVector);
+            currentCameraHeight += cameraHeightDelta;
+            currentCameraHeight = Mathf.Clamp(currentCameraHeight, CameraBoom_MinHeight, CameraBoom_MaxHeight);
+
+            float currentAngle = CurrentCameraYaw * Mathf.Deg2Rad;
+            Vector3 localCameraPos = new Vector3(CameraBoomLength * Mathf.Sin(currentAngle),
+                                                 currentCameraHeight,
+                                                 CameraBoomLength * Mathf.Cos(currentAngle));
+
+            CameraTransform.position = transform.position + localCameraPos;
+        }
     }
 
     public void SetCursorLock(bool locked)

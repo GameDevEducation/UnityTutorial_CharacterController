@@ -181,8 +181,12 @@ public class MovementMode_Ground : MonoBehaviour, IMovementMode
 
     protected void UpdateMovement(RaycastHit groundCheckResult)
     {
+        Vector3 forwardVector = Vector3.ProjectOnPlane(State.MovementFrameTransform.forward, State.UpVector).normalized;
+        Vector3 sideVector = Vector3.ProjectOnPlane(State.MovementFrameTransform.right, State.UpVector).normalized;
+
         // calculate our movement input
-        Vector3 movementVector = transform.forward * State.Input_Move.y + transform.right * State.Input_Move.x;
+        Vector3 movementVector = forwardVector * State.Input_Move.y + 
+                                 sideVector * State.Input_Move.x;
         movementVector *= CurrentMaxSpeed;
 
         // are we on the ground?

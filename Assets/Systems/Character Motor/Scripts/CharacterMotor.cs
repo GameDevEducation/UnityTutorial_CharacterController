@@ -30,6 +30,8 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         public CapsuleCollider LinkedCollider;
         public CharacterMotorConfig LinkedConfig;
 
+        public Transform MovementFrameTransform;
+
         public Vector2 Input_Move;
         public Vector2 Input_Look;
         public bool Input_Jump;
@@ -180,6 +182,7 @@ public class CharacterMotor : MonoBehaviour, IDamageable
         State.LocalGravity = GetComponent<GravityTracker>();
         State.LinkedCollider = GetComponentInChildren<CapsuleCollider>();
         State.LinkedConfig = Config;
+        State.MovementFrameTransform = transform;
 
         SwitchMovementMode<MovementMode_Ground>();
 
